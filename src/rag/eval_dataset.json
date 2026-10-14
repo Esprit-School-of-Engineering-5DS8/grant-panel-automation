@@ -1,0 +1,282 @@
+[
+  {
+    "id": "q01",
+    "query": "Quel est le plafond des coûts indirects autorisés ?",
+    "target_doc": "04_budget_eligibility_rules.md",
+    "target_keyword": "25%",
+    "criterion": "budget",
+    "is_trap": false
+  },
+  {
+    "id": "q02",
+    "query": "Quelle est la part maximale autorisée pour la sous-traitance dans le budget ?",
+    "target_doc": "04_budget_eligibility_rules.md",
+    "target_keyword": "15%",
+    "criterion": "budget",
+    "is_trap": false
+  },
+  {
+    "id": "q03",
+    "query": "Quelles dépenses sont strictement inéligibles au financement ?",
+    "target_doc": "04_budget_eligibility_rules.md",
+    "target_keyword": "non-eligible",
+    "criterion": "budget",
+    "is_trap": false
+  },
+  {
+    "id": "q04",
+    "query": "Les coûts d'amortissement de matériel sont-ils éligibles ?",
+    "target_doc": "04_budget_eligibility_rules.md",
+    "target_keyword": "depreciation",
+    "criterion": "budget",
+    "is_trap": false
+  },
+  {
+    "id": "q05",
+    "query": "Quel est le montant maximal de subvention demandé par projet ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "3,000,000",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q06",
+    "query": "Quelle est l'enveloppe budgétaire globale de l'appel Horizon-AI ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "45,000,000",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q07",
+    "query": "Quel est le nombre minimal d'entités légales indépendantes dans un consortium ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "3",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q08",
+    "query": "Quelle est la limite maximale de pages pour la Partie B de la candidature ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "40 pages",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q09",
+    "query": "Comment l'évaluateur technique doit-il vérifier les figures et graphiques par rapport au texte ?",
+    "target_doc": "02_technical_excellence_criteria.md",
+    "target_keyword": "visual artifacts",
+    "criterion": "technique",
+    "is_trap": false
+  },
+  {
+    "id": "q10",
+    "query": "Une incohérence entre un résumé qui promet +40% et un graphique montrant 12% est-elle pénalisée ?",
+    "target_doc": "02_technical_excellence_criteria.md",
+    "target_keyword": "methodological weakness",
+    "criterion": "technique",
+    "is_trap": false
+  },
+  {
+    "id": "q11",
+    "query": "Quelles sont les exigences de reproductibilité et de science ouverte ?",
+    "target_doc": "02_technical_excellence_criteria.md",
+    "target_keyword": "FAIR",
+    "criterion": "technique",
+    "is_trap": false
+  },
+  {
+    "id": "q12",
+    "query": "Quels aspects sont évalués dans la voie vers l'impact (Pathway to Impact) ?",
+    "target_doc": "03_impact_dissemination_criteria.md",
+    "target_keyword": "pathway to impact",
+    "criterion": "impact",
+    "is_trap": false
+  },
+  {
+    "id": "q13",
+    "query": "Comment l'évaluateur d'impact vérifie-t-il les engagements industriels et partenaires ?",
+    "target_doc": "03_impact_dissemination_criteria.md",
+    "target_keyword": "exploitation roadmaps",
+    "criterion": "impact",
+    "is_trap": false
+  },
+  {
+    "id": "q14",
+    "query": "Que signifie une note de 0 dans la grille d'évaluation ancrée ?",
+    "target_doc": "05_evaluation_scoring_anchors.md",
+    "target_keyword": "score 0",
+    "criterion": "scoring_rubric",
+    "is_trap": false
+  },
+  {
+    "id": "q15",
+    "query": "Quelle est la définition exacte d'une note de 5 (Excellent) ?",
+    "target_doc": "05_evaluation_scoring_anchors.md",
+    "target_keyword": "score 5",
+    "criterion": "scoring_rubric",
+    "is_trap": false
+  },
+  {
+    "id": "q16",
+    "query": "Pourquoi une note sans citation textuelle exacte est-elle invalidée ?",
+    "target_doc": "05_evaluation_scoring_anchors.md",
+    "target_keyword": "verbatim",
+    "criterion": "scoring_rubric",
+    "is_trap": false
+  },
+  {
+    "id": "q17",
+    "query": "À quel seuil d'écart de note le président déclenche-t-il le tour 2 de discussion ?",
+    "target_doc": "07_panel_chair_guidelines.md",
+    "target_keyword": "2.0",
+    "criterion": "chair",
+    "is_trap": false
+  },
+  {
+    "id": "q18",
+    "query": "Quel est le rôle du président en cas de désaccord persistant entre évaluateurs ?",
+    "target_doc": "07_panel_chair_guidelines.md",
+    "target_keyword": "arbitration",
+    "criterion": "chair",
+    "is_trap": false
+  },
+  {
+    "id": "q19",
+    "query": "Quels garde-fous de ton s'appliquent à la lettre de décision du président ?",
+    "target_doc": "07_panel_chair_guidelines.md",
+    "target_keyword": "decision letter",
+    "criterion": "chair",
+    "is_trap": false
+  },
+  {
+    "id": "q20",
+    "query": "Quel délai est accordé pour soumettre le plan de gestion des données (DMP) ?",
+    "target_doc": "08_data_management_and_open_science.md",
+    "target_keyword": "first 6 months",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q21",
+    "query": "Quelles obligations s'appliquent aux publications scientifiques en libre accès ?",
+    "target_doc": "08_data_management_and_open_science.md",
+    "target_keyword": "Open Access without embargo",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q22",
+    "query": "Comment la propriété intellectuelle commerciale peut-elle être protégée avant diffusion ?",
+    "target_doc": "08_data_management_and_open_science.md",
+    "target_keyword": "patent applications",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q23",
+    "query": "Quelles obligations éthiques et de confidentialité RGPD s'appliquent aux données d'entraînement ?",
+    "target_doc": "06_ethics_and_security_guidelines.md",
+    "target_keyword": "GDPR",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q24",
+    "query": "Comment sont traités les projets comportant des risques d'usage militaire ou dual-use ?",
+    "target_doc": "06_ethics_and_security_guidelines.md",
+    "target_keyword": "dual-use",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q25",
+    "query": "Quelle protection est requise contre les attaques par injection de prompt ?",
+    "target_doc": "06_ethics_and_security_guidelines.md",
+    "target_keyword": "prompt injection",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q26",
+    "query": "Quelle est la définition d'une note de 2 (Fair) dans la grille ?",
+    "target_doc": "05_evaluation_scoring_anchors.md",
+    "target_keyword": "score 2",
+    "criterion": "scoring_rubric",
+    "is_trap": false
+  },
+  {
+    "id": "q27",
+    "query": "Quelle est la définition d'une note de 4 (Very Good) ?",
+    "target_doc": "05_evaluation_scoring_anchors.md",
+    "target_keyword": "score 4",
+    "criterion": "scoring_rubric",
+    "is_trap": false
+  },
+  {
+    "id": "q28",
+    "query": "Quelles sont les dates et heures de clôture de l'appel à projets ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "October 15, 2026",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "q29",
+    "query": "Quelles catégories de personnels peuvent être imputées en coûts directs ?",
+    "target_doc": "04_budget_eligibility_rules.md",
+    "target_keyword": "personnel costs",
+    "criterion": "budget",
+    "is_trap": false
+  },
+  {
+    "id": "q30",
+    "query": "Quelle est la durée autorisée en mois pour la réalisation d'un projet financé ?",
+    "target_doc": "01_call_overview.md",
+    "target_keyword": "24 to 36",
+    "criterion": "general",
+    "is_trap": false
+  },
+  {
+    "id": "trap01",
+    "query": "Quel est le montant de remboursement pour l'achat de voitures de fonction de luxe ?",
+    "target_doc": "NONE",
+    "target_keyword": "REFUSE",
+    "criterion": "trap",
+    "is_trap": true
+  },
+  {
+    "id": "trap02",
+    "query": "À quelle adresse physique à Berlin doit-on poster les trois exemplaires papier reliés ?",
+    "target_doc": "NONE",
+    "target_keyword": "REFUSE",
+    "criterion": "trap",
+    "is_trap": true
+  },
+  {
+    "id": "trap03",
+    "query": "Quelle est la prime allouée pour les publications sur TikTok et Snapchat ?",
+    "target_doc": "NONE",
+    "target_keyword": "REFUSE",
+    "criterion": "trap",
+    "is_trap": true
+  },
+  {
+    "id": "trap04",
+    "query": "Combien de jetons de cryptomonnaie Bitcoin sont attribués à la signature du contrat ?",
+    "target_doc": "NONE",
+    "target_keyword": "REFUSE",
+    "criterion": "trap",
+    "is_trap": true
+  },
+  {
+    "id": "trap05",
+    "query": "Quel formulaire papier faut-il faxer au ministère avant minuit ?",
+    "target_doc": "NONE",
+    "target_keyword": "REFUSE",
+    "criterion": "trap",
+    "is_trap": true
+  }
+]

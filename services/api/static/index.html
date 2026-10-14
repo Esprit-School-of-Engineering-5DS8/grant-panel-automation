@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrantPath — Horizon-AI Scientific Grant Evaluation Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar (HirePath / Astryx Inspired) -->
+    <aside class="sidebar">
+      <div class="brand-container">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="8" fill="#3B5BFD"/>
+            <path d="M7 14L12 9L17 14L22 9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 19L12 14L17 19L22 14" stroke="rgba(255,255,255,0.6)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="brand-title">
+            <span class="brand-name">Grant<span class="brand-highlight">Path</span></span>
+            <span class="brand-badge">Horizon-AI</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#proposals" class="nav-item" data-tab="proposals">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span class="nav-label">Grant Proposals</span>
+          <span class="counter-badge counter-blue" id="counter-total-proposals">20</span>
+        </a>
+        <a href="#workflow" class="nav-item" data-tab="workflow">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </span>
+          <span class="nav-label">n8n Orchestrator</span>
+          <span class="counter-badge counter-purple" id="n8n-status-badge">Live</span>
+        </a>
+        <a href="#arbitrations" class="nav-item" data-tab="arbitrations">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+          </span>
+          <span class="nav-label">Disagreements (R2)</span>
+          <span class="counter-badge counter-amber" id="counter-conflicts">4</span>
+        </a>
+        <a href="#traceability" class="nav-item" data-tab="traceability">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </span>
+          <span class="nav-label">Traceability & Audit</span>
+          <span class="counter-badge counter-green">100%</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-subsections">
+        <div class="sidebar-section-title">SIMULATOR TOOLS</div>
+        <button class="sub-nav-btn" id="btn-run-cohort">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run Full Cohort
+        </button>
+        <button class="sub-nav-btn" id="btn-open-n8n">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open n8n Canvas
+        </button>
+      </div>
+
+      <!-- User Profile Card -->
+      <div class="sidebar-user">
+        <div class="user-avatar">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Chair Profile">
+          <span class="user-status-dot"></span>
+        </div>
+        <div class="user-meta">
+          <div class="user-name">Dr. Elena Vance</div>
+          <div class="user-role">Panel Chair (Executive)</div>
+        </div>
+        <button class="user-menu-btn" title="Options">•••</button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top Astryx Header & KPI Banner -->
+      <header class="hero-banner">
+        <div class="hero-header-top">
+          <div class="hero-title-area">
+            <h1>Panel Evaluation Dashboard</h1>
+            <p>Welcome back, Panel Chair. Official Horizon-AI Scientific Deliberation is active.</p>
+          </div>
+          <div class="hero-actions">
+            <div class="n8n-toggle-box">
+              <span class="n8n-toggle-label">Pipeline Target:</span>
+              <select id="execution-mode-select" class="clean-select">
+                <option value="n8n">n8n Orchestrator (Port 5678)</option>
+                <option value="direct">Direct FastAPI Microservice</option>
+              </select>
+            </div>
+            <button class="primary-btn" id="btn-quick-evaluate-first">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Evaluate PROP-01
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Astryx-Style KPI Cards Inside Header -->
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-total">
+            <div class="kpi-header">
+              <div class="kpi-icon-pill icon-blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <span class="kpi-label">Active Proposals</span>
+              <span class="kpi-more">⋮</span>
+            </div>
+            <div class="kpi-number" id="kpi-total-val">20</div>
+            <div class="kpi-delta delta-positive">
+              <span>+100%</span> intake complete
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-funded">
+            <div class="kpi-header">
+              <div class="kpi-icon-pill icon-green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <span class="kpi-label">Funded & Recommended</span>
+              <span class="kpi-more">⋮</span>
+            </div>
+            <div class="kpi-number text-green" id="kpi-funded-val">12</div>
+            <div class="kpi-delta delta-subtle">Tier A (Score ≥ 4.0)</div>
+          </div>
+
+          <div class="kpi-card" id="kpi-conflicts">
+            <div class="kpi-header">
+              <div class="kpi-icon-pill icon-amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <span class="kpi-label">Round 2 Disputes</span>
+              <span class="kpi-more">⋮</span>
+            </div>
+            <div class="kpi-number text-amber" id="kpi-conflicts-val">4</div>
+            <div class="kpi-delta delta-amber">Score divergence ≥ 2.0</div>
+          </div>
+
+          <div class="kpi-card" id="kpi-rejected">
+            <div class="kpi-header">
+              <div class="kpi-icon-pill icon-red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+              <span class="kpi-label">Deterministic Rejected</span>
+              <span class="kpi-more">⋮</span>
+            </div>
+            <div class="kpi-number text-red" id="kpi-rejected-val">4</div>
+            <div class="kpi-delta delta-subtle">Hard caps / Injection</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Layout Content (2 Columns) -->
+      <div class="dashboard-body">
+        <!-- Left Column: Proposals Pipeline & Active Review -->
+        <section class="panel-column left-column">
+          <!-- Active Proposals Filter Bar -->
+          <div class="card-box">
+            <div class="section-card-header">
+              <div>
+                <h2>Grant Applications</h2>
+                <span class="subtitle">Cohort of 20 Horizon-AI applicants ready for evaluation</span>
+              </div>
+              <div class="filter-actions">
+                <input type="text" id="search-proposals" placeholder="Search by title, PI, ID..." class="search-input">
+                <button class="secondary-btn" id="btn-refresh-proposals">Refresh</button>
+              </div>
+            </div>
+
+            <div class="proposals-list" id="proposals-container">
+              <!-- Dynamically Populated Cards -->
+              <div class="loading-state">Loading proposals from disk...</div>
+            </div>
+          </div>
+
+          <!-- Live Multi-Agent Pipeline Trace Stage -->
+          <div class="card-box pipeline-box">
+            <div class="section-card-header">
+              <div>
+                <h2>Live 8-Stage Multi-Agent Pipeline Trace</h2>
+                <span class="subtitle" id="pipeline-sub-status">Select a proposal above and click 'Run in n8n'</span>
+              </div>
+              <div class="pipeline-engine-badge" id="pipeline-badge">Ready</div>
+            </div>
+
+            <!-- Visual Pipeline Stage Steps -->
+            <div class="pipeline-stepper" id="pipeline-stepper">
+              <div class="step-node" data-stage="0">
+                <div class="step-circle">0</div>
+                <div class="step-label">Webhook Intake</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Multimodal</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Compliance</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="3">
+                <div class="step-circle">3</div>
+                <div class="step-label">3 Evaluators</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="4">
+                <div class="step-circle">4</div>
+                <div class="step-label">Disagreement</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="5">
+                <div class="step-circle">5</div>
+                <div class="step-label">Chair Arbitr.</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="6">
+                <div class="step-circle">6</div>
+                <div class="step-label">Aggregation</div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="step-node" data-stage="7">
+                <div class="step-circle">7</div>
+                <div class="step-label">Traceability</div>
+              </div>
+            </div>
+
+            <!-- Live Output Console -->
+            <div class="pipeline-console">
+              <div class="console-header">
+                <span>Orchestration Execution Logs</span>
+                <span class="mono-badge" id="active-proposal-pill">PROP-01-EXCELLENT</span>
+              </div>
+              <pre class="console-body" id="console-logs">Click "Run Pipeline" on any proposal card to trace the multi-agent deliberation.</pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Evaluator Agent Panels & Chair Sign-off -->
+        <section class="panel-column right-column">
+          <!-- 3 Evaluator Agents Score breakdown -->
+          <div class="card-box">
+            <div class="section-card-header">
+              <div>
+                <h2>Autonomous Evaluator Agent Scores</h2>
+                <span class="subtitle">Stage 3 Anchor Rubrics (0.0 to 5.0 scale)</span>
+              </div>
+              <span class="badge-neutral" id="current-eval-id">Active: PROP-01</span>
+            </div>
+
+            <div class="agents-eval-grid">
+              <!-- Technical Agent -->
+              <div class="eval-agent-card" id="agent-tech-card">
+                <div class="agent-card-header">
+                  <div class="agent-avatar tech-avatar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="agent-role-title">Technical Evaluator</div>
+                    <span class="agent-status" id="agent-tech-status">Criterion 1</span>
+                  </div>
+                  <div class="agent-score-pill" id="agent-tech-score">4.5 / 5.0</div>
+                </div>
+                <p class="agent-quote" id="agent-tech-text">"Exemplary methodology combining symbolic guarantees with verified neural architectures."</p>
+                <div class="agent-meta-chip" id="agent-tech-rec">REC: FUND</div>
+              </div>
+
+              <!-- Impact Agent -->
+              <div class="eval-agent-card" id="agent-impact-card">
+                <div class="agent-card-header">
+                  <div class="agent-avatar impact-avatar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </div>
+                  <div>
+                    <div class="agent-role-title">Impact Evaluator</div>
+                    <span class="agent-status" id="agent-impact-status">Criterion 2</span>
+                  </div>
+                  <div class="agent-score-pill" id="agent-impact-score">4.5 / 5.0</div>
+                </div>
+                <p class="agent-quote" id="agent-impact-text">"Strong industrial dissemination pathway and planned open-source Apache 2.0 release."</p>
+                <div class="agent-meta-chip" id="agent-impact-rec">REC: FUND</div>
+              </div>
+
+              <!-- Budget Agent -->
+              <div class="eval-agent-card" id="agent-budget-card">
+                <div class="agent-card-header">
+                  <div class="agent-avatar budget-avatar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  </div>
+                  <div>
+                    <div class="agent-role-title">Budget Evaluator</div>
+                    <span class="agent-status" id="agent-budget-status">Criterion 3</span>
+                  </div>
+                  <div class="agent-score-pill" id="agent-budget-score">4.5 / 5.0</div>
+                </div>
+                <p class="agent-quote" id="agent-budget-text">"Indirect costs align strictly with 25% flat rate. Subcontracting complies with 15% cap."</p>
+                <div class="agent-meta-chip" id="agent-budget-rec">REC: FUND</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Round 2 Chair Arbitration & Stage 8 Human Sign-off -->
+          <div class="card-box chair-deliberation-box">
+            <div class="section-card-header">
+              <div>
+                <h2>Chair Arbitration & Sign-off</h2>
+                <span class="subtitle">Round 2 Consensus & Final Decision Letter</span>
+              </div>
+              <span class="status-pill status-ready" id="chair-status-pill">Awaiting Review</span>
+            </div>
+
+            <div class="arbitration-content">
+              <div class="decision-letter-preview">
+                <div class="meta-row">
+                  <span class="meta-label">Composite Score:</span>
+                  <span class="meta-val highlight-score" id="composite-score-val">4.50 / 5.0</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Cohort Tier:</span>
+                  <span class="meta-val highlight-tier" id="cohort-tier-val">TIER 1 (FUNDABLE)</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Traceability Rate:</span>
+                  <span class="meta-val text-green" id="traceability-val">100.0% (VERIFIED)</span>
+                </div>
+
+                <div class="draft-letter-box">
+                  <div class="letter-title">Evaluation Summary Report (ESR) Extract:</div>
+                  <div class="letter-body" id="esr-letter-body">
+                    The Horizon-AI Grant Panel has completed its evaluation. The proposal demonstrates rigorous symbolic safeguards, legitimate financial schedule, and substantiated empirical benchmarks.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Human-in-the-Loop Sign-off Form -->
+              <div class="chair-action-bar">
+                <button class="primary-btn sign-off-btn" id="btn-sign-off">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                  Sign-off & Authorize ESR
+                </button>
+                <button class="secondary-btn" id="btn-export-json">Export Evaluation JSON</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- n8n Integration Status & Control -->
+          <div class="card-box n8n-guide-box">
+            <div class="n8n-header">
+              <div class="n8n-icon-logo">n8n</div>
+              <div>
+                <div class="n8n-title">Orchestration Webhook Bridge</div>
+                <div class="n8n-sub">POST http://localhost:5678/webhook/submit-proposal</div>
+              </div>
+            </div>
+            <p class="n8n-info-text">
+              The Grant Panel Simulator is orchestrated via <strong>n8n</strong>. You can trigger the workflow from this UI directly via webhook, or run in fallback microservice mode.
+            </p>
+            <div class="n8n-links-row">
+              <a href="http://localhost:5678" target="_blank" class="n8n-pill-link">Open n8n UI (5678) ↗</a>
+              <a href="http://localhost:6333/dashboard" target="_blank" class="n8n-pill-link">Qdrant Vector DB ↗</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

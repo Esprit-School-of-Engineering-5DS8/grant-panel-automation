@@ -1,0 +1,401 @@
+{
+  "name": "Grant Panel Simulator - Multi-Agent Evaluation Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "submit-proposal",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "node-webhook-trigger",
+      "name": "Stage 0: Proposal Submission Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage2/deterministic-checks",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body || $json) }}"
+      },
+      "id": "node-deterministic-checks",
+      "name": "Stage 2: Deterministic Code Checks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [360, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_eligible }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-check-eligibility",
+      "name": "Is Proposal Eligible?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "final_status",
+              "value": "REJECTED_DETERMINISTIC"
+            },
+            {
+              "name": "rejection_reasons",
+              "value": "={{ $json.violations.join('; ') }}"
+            }
+          ]
+        }
+      },
+      "id": "node-early-rejection",
+      "name": "Early Exit: Deterministic Rejection",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ criterion: 'technical', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
+      },
+      "id": "node-agent-technical",
+      "name": "Agent 1: Technical Evaluator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ criterion: 'impact', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
+      },
+      "id": "node-agent-impact",
+      "name": "Agent 2: Impact Evaluator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ criterion: 'budget', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
+      },
+      "id": "node-agent-budget",
+      "name": "Agent 3: Budget Evaluator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1360, 240]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tech = $('Agent 1: Technical Evaluator').first().json;\nconst impact = $('Agent 2: Impact Evaluator').first().json;\nconst budget = $('Agent 3: Budget Evaluator').first().json;\n\nreturn [{\n  json: {\n    reviews: {\n      technical: tech,\n      impact: impact,\n      budget: budget\n    }\n  }\n}];"
+      },
+      "id": "node-collect-round1",
+      "name": "Collect Round 1 Reviews",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage4/detect-disagreement",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "node-detect-disagreement",
+      "name": "Stage 4: Disagreement Detector Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1840, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.triggers_round_2 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-disagreement",
+      "name": "Disagreement >= 2.0 or Conflict?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2080, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage5/chair-arbitration",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json, reviews: $('Collect Round 1 Reviews').first().json.reviews, disagreement_info: $json }) }}"
+      },
+      "id": "node-chair-arbitration",
+      "name": "Stage 5: Round 2 Chair Arbitration",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2320, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json;\n\n// If coming from Chair Arbitration, it contains arbitrated_scores\nif (incoming.arbitrated_scores) {\n  return [{ json: incoming.arbitrated_scores }];\n}\n\n// Otherwise coming from false branch of Disagreement Detector, read Round 1 reviews\nconst r1 = $('Collect Round 1 Reviews').first().json.reviews;\nreturn [{\n  json: {\n    technical: r1.technical.score,\n    impact: r1.impact.score,\n    budget: r1.budget.score\n  }\n}];"
+      },
+      "id": "node-resolve-scores",
+      "name": "Resolve Scores to Aggregate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2560, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage6/aggregate-scores",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "node-aggregate-scores",
+      "name": "Stage 6: Score Aggregation & Ranking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2800, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/stage7/verify-traceability",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ review: $('Agent 1: Technical Evaluator').first().json, raw_proposal_text: JSON.stringify($('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json) }) }}"
+      },
+      "id": "node-traceability-verifier",
+      "name": "Stage 7: Traceability Verifier Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3040, 240]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "READY_FOR_HUMAN_CHAIR_APPROVAL"
+            },
+            {
+              "name": "composite_score",
+              "value": "={{ $('Stage 6: Score Aggregation & Ranking').first().json.composite_score }}"
+            },
+            {
+              "name": "tier",
+              "value": "={{ $('Stage 6: Score Aggregation & Ranking').first().json.tier }}"
+            },
+            {
+              "name": "recommendation",
+              "value": "={{ $('Stage 6: Score Aggregation & Ranking').first().json.recommendation }}"
+            },
+            {
+              "name": "traceability_rate",
+              "value": "={{ $json.traceability_rate }}"
+            }
+          ]
+        }
+      },
+      "id": "node-stage8-human-approval",
+      "name": "Stage 8: Human Chair Sign-off",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3280, 240]
+    }
+  ],
+  "connections": {
+    "Stage 0: Proposal Submission Webhook": {
+      "main": [
+        [
+          {
+            "node": "Stage 2: Deterministic Code Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage 2: Deterministic Code Checks": {
+      "main": [
+        [
+          {
+            "node": "Is Proposal Eligible?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Proposal Eligible?": {
+      "main": [
+        [
+          {
+            "node": "Agent 1: Technical Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Early Exit: Deterministic Rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 1: Technical Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Agent 2: Impact Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 2: Impact Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Agent 3: Budget Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 3: Budget Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Collect Round 1 Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Round 1 Reviews": {
+      "main": [
+        [
+          {
+            "node": "Stage 4: Disagreement Detector Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage 4: Disagreement Detector Code": {
+      "main": [
+        [
+          {
+            "node": "Disagreement >= 2.0 or Conflict?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disagreement >= 2.0 or Conflict?": {
+      "main": [
+        [
+          {
+            "node": "Stage 5: Round 2 Chair Arbitration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resolve Scores to Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage 5: Round 2 Chair Arbitration": {
+      "main": [
+        [
+          {
+            "node": "Resolve Scores to Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Scores to Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Stage 6: Score Aggregation & Ranking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage 6: Score Aggregation & Ranking": {
+      "main": [
+        [
+          {
+            "node": "Stage 7: Traceability Verifier Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage 7: Traceability Verifier Code": {
+      "main": [
+        [
+          {
+            "node": "Stage 8: Human Chair Sign-off",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

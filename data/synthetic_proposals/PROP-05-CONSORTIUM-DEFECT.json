@@ -1,0 +1,35 @@
+{
+  "id": "PROP-05-CONSORTIUM-DEFECT",
+  "title": "GreenTransformer: Ultra-Sparse Attention for Eco-Computing",
+  "pi_name": "Dr. Amira Ben Salem",
+  "consortium_partners": [
+    "Esprit Research (Tunisia)",
+    "Sorbonne (France)"
+  ],
+  "requested_grant": 1712500.0,
+  "budget": {
+    "direct_personnel": 1000000.0,
+    "direct_equipment": 200000.0,
+    "direct_travel": 40000.0,
+    "direct_other": 50000.0,
+    "subcontracting": 100000.0,
+    "indirect_costs": 322500.0,
+    "requested_grant": 1712500.0
+  },
+  "page_count": 30,
+  "ground_truth": {
+    "quality_tier": "INADMISSIBLE_CONSORTIUM",
+    "flaws": [
+      "CONSORTIUM_LESS_THAN_3_PARTNERS"
+    ],
+    "expected_decision": "REJECT_DETERMINISTIC",
+    "consensus_score": 0.0
+  },
+  "sections": {
+    "abstract": "GreenTransformer develops dynamic structured pruning algorithms to cut foundation model inference carbon emissions by 60%.",
+    "scientific_methodology": "We propose energy-aware token routing based on reinforcement learning policies evaluated on green cloud data centers.",
+    "impact_and_dissemination": "European Open Science Cloud deployment and integration into popular open repositories.",
+    "work_packages": "WP1: Pruning architectures. WP2: Hardware profiling. WP3: Open-source release.",
+    "budget": "Compliant direct and indirect cost schedule."
+  }
+}

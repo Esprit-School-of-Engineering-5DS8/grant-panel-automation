@@ -1,0 +1,36 @@
+{
+  "id": "PROP-03-FIGURE-CONTRADICTION",
+  "title": "NeuroFlow: High-Efficiency Low-Power Edge Neural Acceleration",
+  "pi_name": "Dr. Sarah Chen",
+  "consortium_partners": [
+    "ETH Zurich (Switzerland)",
+    "IMEC (Belgium)",
+    "Univ Bologna (Italy)"
+  ],
+  "requested_grant": 2150000.0,
+  "budget": {
+    "direct_personnel": 1100000.0,
+    "direct_equipment": 350000.0,
+    "direct_travel": 50000.0,
+    "direct_other": 100000.0,
+    "subcontracting": 150000.0,
+    "indirect_costs": 400000.0,
+    "requested_grant": 2150000.0
+  },
+  "page_count": 31,
+  "ground_truth": {
+    "quality_tier": "MEDIUM",
+    "flaws": [
+      "FIGURE_VS_TEXT_DISCREPANCY"
+    ],
+    "expected_decision": "DISAGREEMENT_ROUND_2",
+    "consensus_score": 3.1
+  },
+  "sections": {
+    "abstract": "NeuroFlow introduces an asynchronous event-driven neuromorphic kernel that delivers a +45% throughput acceleration on edge IoT benchmarks over ARM baseline.",
+    "scientific_methodology": "We map sparse spike neural networks to a custom asynchronous FPGA substrate. As shown in Figure 2 ('Throughput Speedup across 10 benchmarks'), the measured throughput gains average approximately 11.8% over standard GPU quantization.",
+    "impact_and_dissemination": "Enables ultra-low power autonomous drone navigation and robotic perception.",
+    "work_packages": "WP1: Neuromorphic kernel. WP2: Silicon tape-out. WP3: Edge drone flight trials.",
+    "budget": "Compliant personnel \u20ac1.10M, clean 25% indirect costs, 7% subcontracting."
+  }
+}
