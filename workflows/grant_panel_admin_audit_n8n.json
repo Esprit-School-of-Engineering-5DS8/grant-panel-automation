@@ -1,0 +1,26 @@
+{
+  "name": "Open Doors Admin Candidate Audit Pipeline",
+  "nodes": [
+    {"id":"audit-webhook","name":"Webhook: Candidate dossier","type":"n8n-nodes-base.webhook","typeVersion":2,"position":[100,300],"parameters":{"httpMethod":"POST","path":"admin-candidate-audit","responseMode":"lastNode"}},
+    {"id":"normalize-dossier","name":"Normalize candidate dossier","type":"n8n-nodes-base.code","typeVersion":2,"position":[340,300],"parameters":{"jsCode":"const dossier = $json.body || $json;\nreturn [{ json: { candidate: dossier, audit_started_at: new Date().toISOString() } }];"}},
+    {"id":"parse-cv-pdf","name":"Parse CV PDF","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[580,300],"parameters":{"method":"POST","url":"={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://127.0.0.1:8001') + '/api/student/parse-cv' }}","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ cv_content: $json.candidate.cv_latex || '', form_data: $json.candidate }) }}"}},
+    {"id":"extract-video-transcript","name":"Extract video transcript","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[820,300],"parameters":{"method":"POST","url":"={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://127.0.0.1:8001') + '/api/admin/extract-video-transcript' }}","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ candidate: $('Normalize candidate dossier').first().json.candidate }) }}"}},
+    {"id":"evaluate-video","name":"Evaluate video evidence","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1060,300],"parameters":{"method":"POST","url":"={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://127.0.0.1:8001') + '/api/admin/evaluate-video' }}","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ candidate: $('Normalize candidate dossier').first().json.candidate, transcript: $json }) }}"}},
+    {"id":"verify-contract","name":"Verify contract and institution","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1300,300],"parameters":{"method":"POST","url":"={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://127.0.0.1:8001') + '/api/admin/verify-contract-institution' }}","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ candidate: $('Normalize candidate dossier').first().json.candidate }) }}"}},
+    {"id":"deterministic-checks","name":"Run deterministic checks","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1540,300],"parameters":{"method":"POST","url":"={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://127.0.0.1:8001') + '/api/stage2/deterministic-checks' }}","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($('Normalize candidate dossier').first().json.candidate) }}"}},
+    {"id":"aggregate-audit","name":"Aggregate audit evidence","type":"n8n-nodes-base.code","typeVersion":2,"position":[1780,300],"parameters":{"jsCode":"const candidate = $('Normalize candidate dossier').first().json.candidate;\nreturn [{ json: { candidate_id: candidate.id, candidate, cv: $('Parse CV PDF').first().json, video_transcript: $('Extract video transcript').first().json, video_evaluation: $('Evaluate video evidence').first().json, contract_verification: $('Verify contract and institution').first().json, deterministic_checks: $('Run deterministic checks').first().json, status: 'READY_FOR_HUMAN_CHAIR_DECISION' } }];"}},
+    {"id":"chair-decision","name":"Human chair decision","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[2020,300],"parameters":{"values":{"string":[{"name":"decision_status","value":"PENDING_CHAIR_SIGN_OFF"},{"name":"chair_note","value":"Awaiting human review of the aggregated candidate audit."}]}}}
+  ],
+  "connections": {
+    "Webhook: Candidate dossier":{"main":[[{"node":"Normalize candidate dossier","type":"main","index":0}]]},
+    "Normalize candidate dossier":{"main":[[{"node":"Parse CV PDF","type":"main","index":0}]]},
+    "Parse CV PDF":{"main":[[{"node":"Extract video transcript","type":"main","index":0}]]},
+    "Extract video transcript":{"main":[[{"node":"Evaluate video evidence","type":"main","index":0}]]},
+    "Evaluate video evidence":{"main":[[{"node":"Verify contract and institution","type":"main","index":0}]]},
+    "Verify contract and institution":{"main":[[{"node":"Run deterministic checks","type":"main","index":0}]]},
+    "Run deterministic checks":{"main":[[{"node":"Aggregate audit evidence","type":"main","index":0}]]},
+    "Aggregate audit evidence":{"main":[[{"node":"Human chair decision","type":"main","index":0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder":"v1"}
+}

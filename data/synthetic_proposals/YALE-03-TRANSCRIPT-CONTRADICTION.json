@@ -1,0 +1,45 @@
+{
+  "id": "YALE-03-TRANSCRIPT-CONTRADICTION",
+  "title": "Sovereign Debt Restructuring & Global Economic Architecture",
+  "applicant_name": "Liam Sterling",
+  "pi_name": "Liam Sterling",
+  "school": "Yale College / Branford College",
+  "major": "Economics & Global Affairs",
+  "gpa": 3.12,
+  "page_count": 7,
+  "requested_grant": 71000.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 12300.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 71000.0
+  },
+  "budget": {
+    "direct_personnel": 48000.0,
+    "direct_equipment": 5000.0,
+    "direct_travel": 6000.0,
+    "direct_other": 12000.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 71000.0
+  },
+  "ground_truth": {
+    "quality_tier": "LOW",
+    "flaws": [
+      "TRANSCRIPT_GPA_CONTRADICTION"
+    ],
+    "expected_decision": "REJECT",
+    "consensus_score": 2.4
+  },
+  "sections": {
+    "abstract": "Liam Sterling asserts an exemplary academic record with a cumulative GPA of 3.95 and high honors in intermediate microeconomics, examining multilateral debt renegotiation frameworks.",
+    "scientific_methodology": "Empirical regression analysis of 64 sovereign restructuring episodes between 1990 and 2024 using Paris Club and IMF transparency disclosures.",
+    "impact_and_dissemination": "Policy briefing paper intended for the Yale Jackson School of Global Affairs and World Bank working papers series.",
+    "work_packages": "Phase 1: Macro-dataset assembly. Phase 2: Counterfactual simulation. Phase 3: Final thesis defense.",
+    "budget": "Request matches demonstrated financial need after standard family expected contribution."
+  },
+  "video_transcript": "Hello committee. As a Dean's List student maintaining a 3.95 GPA across tough quantitative economics sequences, I bring the dedication needed to complete this postgraduate monograph.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Branford College, New Haven, CT \\\\\nB.A. in Economics and Global Affairs \\\\\n\\textbf{Cumulative GPA: 3.12 / 4.00}\n\\section*{Projects}\nSovereign Debt Restructuring empirical analysis using Paris Club disclosures.\n\\section*{Skills}\nStata, R, LaTeX, Excel macro modeling.\n\\end{document}"
+}

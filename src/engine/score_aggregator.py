@@ -24,7 +24,7 @@ def aggregate_scores(final_scores: Dict[str, float], weights: Dict[str, float] =
 
     breakdown = {}
     for role, weight in weights.items():
-        score = final_scores.get(role, 0.0)
+        score = final_scores.get(role, final_scores.get("academic", 0.0) if role == "technical" else 0.0)
         contrib = score * weight
         breakdown[role] = {
             "score": score,

@@ -1,0 +1,19 @@
+# Local secrets and runtime output
+.env
+.env.*
+!.env.example
+*.log
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Local applicant media and private documents
+*.mp4
+Advanced DL-Exam-6.pdf
+cv-hazem-mrad-toptal.pdf

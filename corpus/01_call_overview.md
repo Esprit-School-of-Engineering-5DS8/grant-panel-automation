@@ -1,22 +1,17 @@
-# Call for Proposals: Horizon-AI-2026-ST-01
-## Title: Collaborative Safe and Autonomous Deep Learning Systems
+# Yale University Student Financial Services & Fellowship Programs
+## Official Guidelines: Yale College & Graduate School Need-Based Aid & Merit Fellowships
 
-### Section 1: Call Overview and Objectives
-The Horizon-AI Framework Programme invites proposals aiming to advance safe, robust, and verifiable deep learning systems for critical industrial and public automation.
-Projects must bring together multidisciplinary research teams and propose verifiable advances over the state of the art in machine intelligence, agentic architectures, and multimodal perception.
+### Section 1: Overview & Mission
+Yale University commits to meeting **100% of demonstrated financial need** for all admitted undergraduate students, regardless of citizenship, immigration status, or national origin. The **Yale Fellowship & Scholarship Review Committee** oversees both need-based institutional grant distributions and prestigious competitive academic fellowships (including the Yale College Postgraduate Fellowships, Yale Summer Research Fellowships, and Graduate Dean's Merit Awards).
 
-- **Funding Body**: European Innovation & Research Executive Agency (EIREA).
-- **Total Call Envelope**: €45,000,000.
-- **Maximum Requested Grant per Project**: €3,000,000.
-- **Project Duration**: 24 to 36 months.
-- **Application Deadline**: October 15, 2026, 17:00 Brussels Time.
-- **Mandatory Submission Artifacts**:
-  1. Administrative and Financial Proposal (Part A & Part B PDF).
-  2. Scanned or digitally certified detailed institutional budget table.
-
-### Section 2: General Eligibility Criteria
-To be deemed eligible for scientific review, proposals must satisfy:
-1. **Consortium Composition**: Minimum of 3 independent legal entities from 3 different eligible member countries.
-2. **Page Limit**: Part B must not exceed 40 pages (excluding references).
-3. **Completeness**: Submissions lacking the certified budget table or required sections will be rejected without scientific review.
-4. **Originality**: The proposal must be original work. Undisclosed plagiarism or duplicate funding applications across agencies will lead to immediate disqualification.
+- **Administering Office**: Yale Student Financial Services (SFS) & Center for International and Professional Experience (CIPE).
+- **Core Principle**: Need-blind admissions and full-need funding with a strict **No-Loan Policy** for undergraduate financial aid packages.
+- **Academic Year Cost of Attendance (COA)**: Includes billed direct costs (Tuition, Housing, Food) and unbilled indirect costs (Books, Supplies, Personal Expenses, Travel).
+- **Evaluation Mechanism**: Tripartite review combining deterministic compliance (pure code formulas), multi-agent academic evaluation (Academic Excellence, Leadership & Impact, Financial Need/Budget Feasibility), and final Committee Chair sign-off.
+- **Application Deadline**: Annual priority deadline for institutional aid and fellowship consideration.
+- **Required Submission Dossier**:
+  1. Student Academic & Financial Dossier (GPA, major, transcript summary, family income, assets).
+  2. Academic & Personal Statements (Research Proposal / Purpose Statement, Leadership & Community Impact).
+  3. Video Motivation Pitch (2-minute student video or audio statement).
+  4. Standardized Budget Breakdown (Parent Contribution, Student Share, Outside Resources).
+  5. 2 Academic / Professional Letters of Recommendation with verifiable citations.

@@ -1,11 +1,13 @@
-# Data Management & Open Science Guidelines
+# Satisfactory Academic Progress (SAP) & Data Privacy
+## Title IV Federal & Yale Institutional Progress Norms and FERPA Compliance
 
-### Section 1: Data Management Requirements
-All funded projects must submit a formal Data Management Plan (DMP) within the first 6 months of project start.
-The plan must detail:
-1. **FAIR Data Principles**: Datasets produced must be Findable, Accessible, Interoperable, and Reusable.
-2. **Data Repositories**: Datasets must be deposited in recognized institutional or public open-access repositories (e.g. Zenodo, European Open Science Cloud).
-3. **Open Access Publications**: All peer-reviewed scientific publications arising from the grant must be immediately published in full Gold or Green Open Access without embargo.
+### Section 1: Satisfactory Academic Progress (SAP) Standards
+Federal regulations and Yale policy mandate that all financial aid and scholarship recipients maintain measurable progress:
+1. **Qualitative Component**: Maintain cumulative GPA of at least **3.0 / 4.0** (or program-specific passing honors).
+2. **Quantitative Pace of Completion**: Successfully complete at least **75%** of cumulative attempted credit hours each academic term.
+3. **Maximum Timeframe**: Complete undergraduate degree requirements within 150% of the published program duration (typically maximum 12 registered terms).
+4. **Appeals**: Students failing SAP may file a formal documented appeal with Student Financial Services detailing extenuating personal, medical, or family hardships.
 
-### Section 2: Intellectual Property & Commercial Exploitation
-While open science is mandated for foundational research results, background and foreground intellectual property with commercial potential may be protected via patent applications prior to public dissemination. Consortium agreements must specify ownership shares and commercial licensing terms.
+### Section 2: Student Privacy (FERPA) & Data Security
+- All application records, tax forms, income figures, and committee evaluations are protected educational records under FERPA.
+- Automated evaluation data, transcripts, and video recordings are stored in encrypted partitions with audit logging.

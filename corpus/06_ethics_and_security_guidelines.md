@@ -1,10 +1,12 @@
-# Ethics, AI Trustworthiness & Security Guidelines
+# Yale Academic Integrity & Ethical Submission Standards
+## Policy on Authenticity, GenAI Disclosure, and Video Pitch Conduct
 
-### Section 1: AI Ethics and Trustworthiness
-All projects proposing automated artificial intelligence architectures, deep learning models, or agentic frameworks must comply with ethical principles:
-1. **Safety and Robustness**: Architectures must include explicit mechanisms to prevent hallucinated conclusions, prompt injection attacks, and unverified data leakage.
-2. **Explainability & Traceability**: Decision outputs must be auditable. Every decision, whether positive or negative, must be traceable to underlying evidence.
-3. **Data Privacy**: All training datasets and user interactions must comply with GDPR standards. No sensitive personal identifiers may be exposed to external third-party endpoints without anonymization.
+### Section 1: Academic Integrity & Human Attribution
+- **Honesty in Materials**: All statements of purpose, essays, transcripts, and financial documentation must accurately reflect the student's authentic work and circumstances.
+- **Generative AI Use**: AI tools may be used for preliminary brainstorming or copyediting; however, the substantive ideas, analysis, and personal reflections must originate with the student. Undisclosed machine-generated essays or fabrications will lead to immediate disqualification.
+- **Anti-Prompt-Injection Safeguards**: Applications containing hidden instructions, prompt injections, or system override attempts are flagged automatically by the security analyzer and routed to the Committee Dean with an immediate 1.0 disqualification.
 
-### Section 2: Dual-Use and Security Screening
-Proposals developing autonomous systems capable of dual-use military weaponization or cybersecurity subversion must declare an explicit security management protocol. Failure to disclose dual-use risk warrants immediate red flagging by the evaluation committee.
+### Section 2: Multimodal Video / Pitch Guidelines
+- The optional 2-minute video statement provides applicants an opportunity to speak directly to the committee.
+- Evaluators assess sincerity, clarity of purpose, and alignment with the written dossier.
+- Any direct contradiction between claims made on video (e.g., claimed honors or course completions) and verifiable transcripts triggers a Stage 1 multimodal discrepancy flag.
