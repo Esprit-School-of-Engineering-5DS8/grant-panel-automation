@@ -1,0 +1,43 @@
+{
+  "id": "YALE-08-DUBOIS",
+  "title": "Yale Fellowship: Environmental Studies & Forestry Distinction Project",
+  "applicant_name": "Sophie Dubois",
+  "pi_name": "Sophie Dubois",
+  "school": "Yale College",
+  "major": "Environmental Studies & Forestry",
+  "gpa": 3.85,
+  "page_count": 8,
+  "requested_grant": 76500.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 5250.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 76500.0
+  },
+  "budget": {
+    "direct_personnel": 49725.0,
+    "direct_equipment": 11475.0,
+    "direct_travel": 7650.0,
+    "direct_other": 7650.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 76500.0
+  },
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.5
+  },
+  "sections": {
+    "abstract": "Sophie Dubois is a high-achieving student at Yale pursuing advanced research in Environmental Studies & Forestry. Cumulative GPA: 3.85.",
+    "scientific_methodology": "Rigorous empirical methodology tailored to Environmental Studies & Forestry, drawing upon Yale libraries, laboratories, and computational clusters.",
+    "impact_and_dissemination": "Substantial leadership and campus engagement benefiting Yale and the broader scientific community in Environmental Studies & Forestry.",
+    "work_packages": "Preparation, data acquisition, empirical analysis, and capstone presentation.",
+    "budget": "Budget directly calibrated to institutional need-based grant and tuition coverage ($76,500.00)."
+  },
+  "video_transcript": "Hello to the Yale Selection Committee. I am Sophie Dubois, majoring in Environmental Studies & Forestry. This fellowship represents a pivotal opportunity to expand my scholarship.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Yale College, New Haven, CT \\\\\nB.S. in Environmental Studies & Forestry \\\\\n\\textbf{Cumulative GPA: 3.85 / 4.00} -- Distinction in Field\n\\section*{Research Projects}\nIndependent capstone investigation in advanced Environmental Studies & Forestry.\n\\section*{Technical Skills}\nPython, R, LaTeX, Experimental Design, Statistical Analysis.\n\\end{document}"
+}

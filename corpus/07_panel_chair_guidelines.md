@@ -1,14 +1,14 @@
-# Panel Chair (Président) Operational Protocol
-## Rules for Discussion, Dispute Arbitration and Consensus Building
+# Yale Fellowship Committee Chair Guidelines & Disagreement Arbitration
+## Procedural Rules for Panel Discussion, Quorum, and Final Authorization
 
-### Section 1: Disagreement Thresholds
-The evaluation committee operates under an independent double/triple review model. Evaluators score independently in isolated contexts to prevent anchoring bias.
-The deterministic code pipeline triggers **Round 2 (Discussion & Arbitration)** if:
-1. **Score Delta >= 2.0**: The absolute difference between any two evaluators on comparable sub-dimensions is 2.0 or greater (e.g. Evaluator A gives 4.5 and Evaluator B gives 2.0).
-2. **Polar Disagreement**: One evaluator recommends unconditional rejection (score <= 1.5) while another recommends top-tier funding (score >= 4.0).
-3. **Factual Contradiction**: One evaluator asserts a figure/budget flaw that another evaluator claims is fully compliant.
+### Section 1: Disagreement Threshold & Round 2 Deliberation
+1. **Discrepancy Trigger**:
+   - If evaluator scores on any applicant differ by **$\ge 2.0$ points** (e.g., Academic Evaluator gives 4.5 while Budget Evaluator gives 2.0), Round 2 Chair Arbitration is triggered automatically.
+   - If an applicant receives a "FUND" recommendation from one evaluator and a "REJECT" from another (polar contradiction), the Committee Chair must arbitrate.
+2. **Chair Role**:
+   - The Chair reviews documentary evidence, verifies citations against the raw student record, and provides an arbitrated consensus score.
+   - The Chair drafts the official **Fellowship Summary Report (FSR)** and award notification letter.
 
-### Section 2: Role of the Panel Chair
-- **Discussion Moderation**: The Chair convenes the discussion, presents anonymized summaries of reviewer findings, and asks evaluators to defend or revise their scores based solely on evidentiary excerpts.
-- **Hierarchical Arbitration**: If evaluators cannot reach consensus, the Chair arbitrates with a binding decision score and detailed justification.
-- **Decision Letter Drafting**: The Chair drafts the official Evaluation Summary Report (ESR) with strengths, weaknesses, final score, and actionable feedback. The letter must remain strictly objective, professional, and devoid of unverified commitments.
+### Section 2: Human-in-the-Loop Final Sign-Off
+- Automated decisions cannot disburse institutional funds without the digital signature of the Committee Chair or Dean of Student Financial Services.
+- The Chair retains authority to adjust awards based on special family circumstances, medical expenses, or emergency appeals.

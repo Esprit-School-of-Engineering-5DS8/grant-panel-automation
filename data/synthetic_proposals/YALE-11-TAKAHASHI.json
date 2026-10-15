@@ -1,0 +1,43 @@
+{
+  "id": "YALE-11-TAKAHASHI",
+  "title": "Yale Fellowship: Astrophysics & Machine Learning Distinction Project",
+  "applicant_name": "Aria Takahashi",
+  "pi_name": "Aria Takahashi",
+  "school": "Yale College",
+  "major": "Astrophysics & Machine Learning",
+  "gpa": 3.91,
+  "page_count": 8,
+  "requested_grant": 86000.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 4350.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 86000.0
+  },
+  "budget": {
+    "direct_personnel": 55900.0,
+    "direct_equipment": 12900.0,
+    "direct_travel": 8600.0,
+    "direct_other": 8600.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 86000.0
+  },
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.6
+  },
+  "sections": {
+    "abstract": "Aria Takahashi is a high-achieving student at Yale pursuing advanced research in Astrophysics & Machine Learning. Cumulative GPA: 3.91.",
+    "scientific_methodology": "Rigorous empirical methodology tailored to Astrophysics & Machine Learning, drawing upon Yale libraries, laboratories, and computational clusters.",
+    "impact_and_dissemination": "Substantial leadership and campus engagement benefiting Yale and the broader scientific community in Astrophysics & Machine Learning.",
+    "work_packages": "Preparation, data acquisition, empirical analysis, and capstone presentation.",
+    "budget": "Budget directly calibrated to institutional need-based grant and tuition coverage ($86,000.00)."
+  },
+  "video_transcript": "Hello to the Yale Selection Committee. I am Aria Takahashi, majoring in Astrophysics & Machine Learning. This fellowship represents a pivotal opportunity to expand my scholarship.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Yale College, New Haven, CT \\\\\nB.S. in Astrophysics & Machine Learning \\\\\n\\textbf{Cumulative GPA: 3.91 / 4.00} -- Distinction in Field\n\\section*{Research Projects}\nIndependent capstone investigation in advanced Astrophysics & Machine Learning.\n\\section*{Technical Skills}\nPython, R, LaTeX, Experimental Design, Statistical Analysis.\n\\end{document}"
+}

@@ -11,7 +11,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CORPUS_DIR = os.path.join(BASE_DIR, "corpus")
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+CORPUS_DIR = os.path.join(PROJECT_ROOT, "corpus")
 PDF_DIR = os.path.join(CORPUS_DIR, "pdfs")
 os.makedirs(PDF_DIR, exist_ok=True)
 

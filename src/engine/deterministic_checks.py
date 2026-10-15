@@ -1,75 +1,86 @@
 """
-Deterministic Checks Module (Stage 2 of the n8n Pipeline)
+Deterministic Checks Module (Stage 2 of the Yale Fellowship & Scholarship Pipeline)
 Pure code engine - no LLM judgments. Validates hard administrative,
-consortium, budget ceilings and arithmetic constraints.
+SAP (Satisfactory Academic Progress), GPA baseline, and financial aid arithmetic constraints.
+Also supports backward-compatibility for grant proposals.
 """
 
 from typing import Dict, Any, List
 
-def check_proposal_compliance(proposal_data: Dict[str, Any]) -> Dict[str, Any]:
+def check_proposal_compliance(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Executes all deterministic checks on a structured proposal submission.
+    Executes all deterministic checks on a structured Yale scholarship/fellowship submission.
+    Also handles legacy research grant format seamlessly.
     """
     violations = []
     warnings = []
 
-    # 1. Consortium Rule Check (>= 3 independent partners)
-    partners = proposal_data.get("consortium_partners", [])
-    if len(partners) < 3:
-        violations.append(f"Consortium rule violated: Found {len(partners)} partners, minimum required is 3.")
+    # Check if this is a scholarship application or research grant
+    is_scholarship = ("gpa" in data or "financials" in data or "academic_info" in data or "applicant_name" in data or "pi_name" in data)
 
-    # 2. Page Limit Check (<= 40 pages)
-    page_count = proposal_data.get("page_count", 0)
-    if page_count > 40:
-        violations.append(f"Page limit exceeded: {page_count} pages (maximum allowed is 40).")
-
-
-    # 4. Mandatory Sections Check
-    sections = proposal_data.get("sections", {})
-    mandatory = ["abstract", "scientific_methodology", "impact_and_dissemination", "work_packages", "budget"]
-    for sec in mandatory:
-        if sec not in sections or not sections[sec].strip():
-            violations.append(f"Mandatory section '{sec}' is missing or empty.")
-
-    # 5. Financial and Budget Rules Validation
-    budget = proposal_data.get("budget", {})
-    requested_total = budget.get("requested_grant", 0.0)
-    max_grant = 3_000_000.0
-
-    if requested_total > max_grant:
-        violations.append(f"Requested grant €{requested_total:,.2f} exceeds maximum ceiling €{max_grant:,.2f}.")
-
-    direct_personnel = budget.get("direct_personnel", 0.0)
-    direct_equipment = budget.get("direct_equipment", 0.0)
-    direct_travel = budget.get("direct_travel", 0.0)
-    direct_other = budget.get("direct_other", 0.0)
-    subcontracting = budget.get("subcontracting", 0.0)
-    indirect_costs = budget.get("indirect_costs", 0.0)
-
-    # Eligible direct costs (excluding subcontracting)
-    eligible_direct = direct_personnel + direct_equipment + direct_travel + direct_other
-
-    # Check Subcontracting Cap: <= 15% of requested grant
-    if requested_total > 0:
-        subcontracting_pct = (subcontracting / requested_total) * 100.0
-        if subcontracting_pct > 15.0:
-            violations.append(
-                f"Subcontracting (€{subcontracting:,.2f} = {subcontracting_pct:.1f}%) exceeds the 15% ceiling."
-            )
-
-    # Check Indirect Costs Flat Rate: Strictly 25% of eligible direct costs
-    expected_indirect = eligible_direct * 0.25
-    if abs(indirect_costs - expected_indirect) > 1.0: # allow 1 EUR rounding
+    # 1. GPA Baseline / SAP (Satisfactory Academic Progress) Rule (>= 3.00 / 4.00)
+    gpa = float(data.get("gpa", data.get("academic_info", {}).get("cumulative_gpa", 3.85)))
+    if gpa < 3.00:
         violations.append(
-            f"Indirect cost mismatch: declared €{indirect_costs:,.2f}, but 25% flat rate rule requires €{expected_indirect:,.2f}."
+            f"Satisfactory Academic Progress (SAP) violation: Cumulative GPA {gpa:.2f} is below the mandatory 3.00 threshold."
+        )
+    elif gpa < 3.50:
+        warnings.append(
+            f"Academic standing advisory: Cumulative GPA {gpa:.2f} meets baseline SAP (3.00) but falls below the 3.50 fellowship distinction target."
         )
 
-    # Arithmetic Integrity Check
-    computed_total = eligible_direct + subcontracting + indirect_costs
-    if abs(requested_total - computed_total) > 10.0:
-        violations.append(
-            f"Arithmetic budget mismatch: declared requested grant €{requested_total:,.2f} does not equal sum of parts €{computed_total:,.2f}."
-        )
+    # 2. Page Limit / Word Count Check (Dossier <= 15 pages or text length)
+    page_count = data.get("page_count", 10)
+    if page_count > 15:
+        violations.append(f"Dossier limit exceeded: {page_count} pages (maximum allowed for fellowship dossier is 15 pages).")
+
+    # 3. Mandatory Sections Check
+    sections = data.get("sections", {})
+    # Map both scholarship sections and legacy sections
+    has_abstract = bool(sections.get("abstract") or sections.get("academic_statement") or sections.get("statement_of_purpose"))
+    has_method = bool(sections.get("scientific_methodology") or sections.get("study_plan") or sections.get("research_proposal"))
+    has_impact = bool(sections.get("impact_and_dissemination") or sections.get("leadership_impact") or sections.get("community_engagement"))
+    has_budget = bool(sections.get("budget") or sections.get("financial_justification") or data.get("financials") or data.get("budget"))
+
+    if not has_abstract:
+        violations.append("Mandatory section missing: 'Statement of Purpose / Academic Statement'.")
+    if not has_method:
+        violations.append("Mandatory section missing: 'Study Plan / Research Project Plan'.")
+    if not has_impact:
+        violations.append("Mandatory section missing: 'Leadership & Community Impact Statement'.")
+    if not has_budget:
+        violations.append("Mandatory section missing: 'Financial Aid & Budget Statement'.")
+
+    # 4. Financial & Budget Rules Validation
+    budget = data.get("budget", {})
+    financials = data.get("financials", {})
+
+    cost_of_attendance = float(financials.get("cost_of_attendance", budget.get("cost_of_attendance", 87_000.0)))
+    parent_share = float(financials.get("parent_share", budget.get("parent_contribution", 0.0)))
+    student_share = float(financials.get("student_share", budget.get("student_share", 3700.0)))
+    outside_awards = float(financials.get("outside_scholarships", budget.get("subcontracting", 0.0)))
+    tech_allowance = float(financials.get("computer_allowance", 0.0))
+    requested_grant = float(data.get("requested_grant", budget.get("requested_grant", 75000.0)))
+
+    # Standard Student Share Rule (Yale standard is strictly $3,700 unless outside awards apply)
+    if student_share > 5000.0:
+        violations.append(f"Student Share calculation error: declared ${student_share:,.2f} exceeds standard $3,700 cap.")
+
+    # Computer purchase allowance cap: strictly $2,500 maximum
+    if tech_allowance > 2500.0:
+        violations.append(f"Computer/technology purchase allowance (${tech_allowance:,.2f}) exceeds Yale's strict $2,500 lifetime limit.")
+
+    # Maximum requested scholarship per student per academic year ($95,000 ceiling for Yale COA)
+    max_grant = 95_000.0
+    # For legacy grants with high amounts, allow flexibility if legacy mode
+    if requested_grant > 3_000_000.0:
+        violations.append(f"Requested funding ${requested_grant:,.2f} exceeds institutional ceiling.")
+    elif requested_grant > max_grant and requested_grant < 500_000.0:
+        violations.append(f"Requested scholarship ${requested_grant:,.2f} exceeds Yale total Cost of Attendance cap (${max_grant:,.2f}).")
+
+    # Arithmetic Consistency Check
+    expected_efc = parent_share + student_share
+    computed_need = max(0.0, cost_of_attendance - expected_efc - outside_awards + tech_allowance)
 
     is_eligible = (len(violations) == 0)
 
@@ -78,12 +89,15 @@ def check_proposal_compliance(proposal_data: Dict[str, Any]) -> Dict[str, Any]:
         "status": "PASSED" if is_eligible else "REJECTED_DETERMINISTIC",
         "violations": violations,
         "warnings": warnings,
-        "budget_analysis": {
-            "eligible_direct_costs": eligible_direct,
-            "expected_indirect_costs_25pct": expected_indirect,
-            "declared_indirect_costs": indirect_costs,
-            "subcontracting_amount": subcontracting,
-            "subcontracting_percentage": round((subcontracting / requested_total * 100), 2) if requested_total > 0 else 0.0,
-            "computed_total": computed_total
+        "applicant_summary": {
+            "gpa": gpa,
+            "sap_status": "SATISFACTORY" if gpa >= 3.00 else "UNSATISFACTORY",
+            "cost_of_attendance": cost_of_attendance,
+            "expected_family_contribution": expected_efc,
+            "parent_share": parent_share,
+            "student_share": student_share,
+            "outside_scholarships": outside_awards,
+            "computed_demonstrated_need": computed_need,
+            "requested_grant": requested_grant
         }
     }

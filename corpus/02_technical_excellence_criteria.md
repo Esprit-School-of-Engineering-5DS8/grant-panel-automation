@@ -1,15 +1,17 @@
-# Award Criterion 1: Technical & Scientific Excellence
-## Specific Guidelines for the Technical Evaluator
+# Yale Academic Excellence & Research Fellowship Criteria
+## Evaluator Guideline 1: Academic Rigor, Intellectual Vitality & Project Feasibility
 
-### Section 1: Scope of Technical Excellence
-The Technical Evaluator assesses the scientific quality, novelty, methodological rigor, and technical feasibility of the proposed work.
-The evaluation covers:
-- **Clarity of Objectives**: Specific, measurable, achievable, relevant, and time-bound (SMART) objectives.
-- **Soundness of Methodology**: Theoretical foundation, mathematical formalisms, machine learning model architectures, and validation benchmarks.
-- **Novelty vs State of the Art**: Genuine advance beyond current frontiers rather than incremental packaging of existing libraries.
-- **Consistency of Visual Artifacts vs Text**: High-level claims, abstracts, and executive summaries must strictly match accompanying figures, architectural schematics, and benchmark charts. Any discrepancy between text (e.g. "+40% efficiency boost") and actual graphical data (e.g. chart showing 12%) is considered a major methodological weakness.
+### Section 1: Academic Trajectory & GPA Standards
+Reviewers evaluate candidates based on academic seriousness, intellectual curiosity, and rigorous preparation:
+1. **Cumulative GPA & Academic Standing**:
+   - Minimum baseline GPA for consideration: **3.0 / 4.0** (Satisfactory Academic Standing).
+   - Competitive fellowship threshold: **3.70 - 4.00** indicates highest academic distinction and deep coursework rigor.
+   - Course selection difficulty, independent study, and capstone research performance are heavily weighted.
+2. **Methodological Validity & Feasibility**:
+   - For research or study projects, the applicant must establish a well-defined question, credible methodology, and achievable timeline (typically 3 to 12 months).
+   - Background preparation: The student must demonstrate foundational coursework, computational/laboratory techniques, or foreign language competency necessary to carry out the project.
 
-### Section 2: Technical Sub-Criteria
-1. **Methodological Rigor**: Does the proposal explain training datasets, validation protocols, baseline comparisons, and ablation plans?
-2. **Technical Feasibility**: Are computational resources, hardware access (GPUs, TPUs), and dataset licenses secured?
-3. **Reproducibility & Open Science**: Code repository availability, adherence to FAIR data principles (Findable, Accessible, Interoperable, Reusable).
+### Section 2: Statement of Academic Purpose & Faculty Endorsements
+- Evaluators examine the **Academic Statement** for originality, clarity, and genuine scholarly motivation.
+- Mandatory Evidence Rule: Academic reviewers MUST cite direct excerpts from the student's statement and supporting faculty recommendation letters.
+- Vague generalizations without documentary quotes are disqualified by the automated audit engine.
