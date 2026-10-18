@@ -711,7 +711,7 @@ export function App() {
     const id = auditCandidate.id
     setVideoStages(current => ({ ...current, [id]: 'queued' })); await new Promise(resolve => setTimeout(resolve, 350)); setVideoStages(current => ({ ...current, [id]: 'extracting transcript' }))
     let transcript: any
-try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: auditCandidate }) }); const data = await res.json(); if (!res.ok) throw new Error(data.detail || `Transcript endpoint returned HTTP ${res.status}`); transcript = data } catch (error: any) { transcript = { source: 'endpoint-unavailable', status: 'failed', transcript_status: 'Failed', transcript: '', duration: auditCandidate.video_duration || 'Unknown', confidence: null, flags: [`Transcript request failed: ${error.message}`] } }
+try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: auditCandidate }) }); if (!res.ok) throw new Error(`Transcript endpoint returned HTTP ${res.status}`); transcript = await res.json() } catch (error: any) { transcript = { source: 'endpoint-unavailable', status: 'failed', transcript_status: 'Failed', transcript: '', duration: auditCandidate.video_duration || 'Unknown', confidence: null, flags: [`Transcript request failed: ${error.message}`] } }
     updateAuditArtifact(id, { video: { ...(auditArtifacts[id]?.video || {}), ...transcript, transcriptStatus: transcript.transcript_status || 'Extracted', transcript: transcript.transcript } }); setVideoStages(current => ({ ...current, [id]: 'complete' })); return transcript
   }
   const runVideoEvaluation = async () => {
@@ -719,51 +719,10 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
     const id = auditCandidate.id
     let transcript = auditArtifacts[id]?.video
     if (!transcript?.transcript) transcript = await runVideoTranscription()
-    let cvParsed = auditArtifacts[id]?.cv?.parsed
-    if (!cvParsed && (auditCandidate.cv_media_id || auditCandidate.cv_latex)) {
-      cvParsed = await runAuditCvParser()
-    }
     setVideoStages(current => ({ ...current, [id]: 'evaluating' }))
     let result: any
-    try {
-      const res = await fetch(apiUrl('/api/admin/evaluate-video'), {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          candidate: { ...auditCandidate, cv_parsed: cvParsed || {} },
-          transcript,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || `Video evaluation returned HTTP ${res.status}`)
-      result = data
-    } catch (error) {
-      result = {
-        source: 'endpoint-unavailable',
-        status: 'failed',
-        evaluation_status: 'Not evaluated',
-        contradiction_status: 'not_checked',
-        contradictions: [],
-        claims: [],
-        flags: [error instanceof Error ? error.message : 'Video comparison failed.'],
-      }
-    }
-    const confidences = (result.checks || []).map((check: { confidence: number }) => check.confidence)
-    const confidence = confidences.length
-      ? `${Math.round(confidences.reduce((sum: number, value: number) => sum + value, 0) / confidences.length * 100)}%`
-      : '—'
-    updateAuditArtifact(id, {
-      video: {
-        ...(transcript || {}),
-        ...result,
-        flags: [...new Set([...(transcript?.flags || []), ...(result.flags || [])])],
-        confidence,
-        transcriptStatus: transcript?.transcript_status || transcript?.transcriptStatus || 'Extracted',
-      },
-    })
-    setVideoStages(current => ({ ...current, [id]: 'complete' }))
-    setCandidateAuditStatus(current => ({ ...current, [id]: 'In review' }))
+    try { const res = await fetch(apiUrl('/api/admin/evaluate-video'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: auditCandidate, transcript }) }); result = await res.json() } catch { result = { source: 'endpoint-unavailable', evaluation_status: 'Not evaluated', confidence: null, claims: [], flags: ['Evaluation endpoint unavailable; no result was fabricated.'] } }
+    updateAuditArtifact(id, { video: { ...(transcript || {}), ...result, status: 'evaluated', confidence: `${Math.round((result.confidence || 0) * 100)}%`, transcriptStatus: transcript?.transcript_status || transcript?.transcriptStatus || 'Extracted' } }); setVideoStages(current => ({ ...current, [id]: 'complete' })); setCandidateAuditStatus(current => ({ ...current, [id]: 'In review' }))
   }
   const runAuditVerifier = async () => { if (auditCandidate) { const id = auditCandidate.id; let result: any = null; setFactCheckStage(current => ({ ...current, [id]: 'preparing evidence' })); await new Promise(resolve => setTimeout(resolve, 350)); setFactCheckStage(current => ({ ...current, [id]: 'comparing facts' })); try { const res = await fetch(apiUrl('/api/admin/cross-verify-evidence'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: { ...auditCandidate, cv_parsed: auditArtifacts[id]?.cv?.parsed || {}, video_transcript: auditArtifacts[id]?.video?.transcript || '' } }) }); if (!res.ok) throw new Error(`HTTP ${res.status}`); result = await res.json(); setFactCheckStage(current => ({ ...current, [id]: 'complete' })) } catch (error: any) { result = { status: 'failed', model_opinion: `Fact checker failed: ${error.message}. No conclusion was fabricated.`, checks: [], final_decision: 'human_required' }; setFactCheckStage(current => ({ ...current, [id]: 'error' })) } updateAuditArtifact(id, { verification: { ...result, institution: auditCandidate.school, party: auditCandidate.applicant_name, checkedAt: result.checked_at } }); setCandidateAuditStatus(current => ({ ...current, [id]: 'In review' })) } }
   const runRagSearch = async () => { setRagLoading(true); try { const res = await fetch(apiUrl('/api/rag/retrieve'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: ragQuery }) }); const data = await res.json(); setRagResults(data.results || []) } finally { setRagLoading(false) } }
