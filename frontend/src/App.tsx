@@ -605,6 +605,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
       video: {
         ...(transcript || {}),
         ...result,
+        flags: [...new Set([...(transcript?.flags || []), ...(result.flags || [])])],
         confidence,
         transcriptStatus: transcript?.transcript_status || transcript?.transcriptStatus || 'Extracted',
       },
@@ -1061,6 +1062,47 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                   {auditPanel === 'profile' && <div className="evidence-grid"><article className="evidence-card"><span className="eyebrow">Candidate context</span><h3>Profile & education</h3><dl><dt>Applicant</dt><dd>{auditCandidate.applicant_name}</dd><dt>Institution</dt><dd>{auditCandidate.school || 'Not provided'}</dd><dt>Track</dt><dd>{auditCandidate.major}</dd><dt>GPA</dt><dd>{auditCandidate.gpa?.toFixed(2)} / 4.00</dd><dt>Requested grant</dt><dd>${auditCandidate.requested_grant?.toLocaleString()}</dd></dl></article><article className="evidence-card attention-card"><span className="eyebrow">Audit posture</span><h3>Evidence status</h3><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>Application identity linked</span></div><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>CV source available</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Video evaluation pending</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Institution verification pending</span></div></article></div>}
                   {auditPanel === 'cv' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">Automated evidence artifact</span><h3>CV PDF parser</h3><p>Candidate: {auditCandidate.applicant_name} · {auditCandidate.id}</p></div><button className="m3-btn m3-btn-primary" onClick={runAuditCvParser}>{(cvParserStages[auditCandidate.id] || 'idle') === 'complete' ? 'Run again' : 'Run parser'}</button></div>{(() => { const pdfUrl = artifactUrl(auditCandidate.pdf_url || `/api/proposals/${auditCandidate.id}/pdf`); const parsed = auditArtifacts[auditCandidate.id]?.cv?.parsed || {}; const groups: any[] = [['Education', [...(parsed.institutions || []), ...(parsed.degrees || []), parsed.extracted_gpa ? `GPA ${parsed.extracted_gpa}` : '']], ['Research & publications', parsed.publications || []], ['Honors & awards', parsed.honors_awards || []], ['Skills', parsed.detected_skills || []], ['Contact', [...(parsed.emails || []), ...(parsed.phones || []), ...(parsed.urls || [])]], ['Employers', parsed.employers || []]]; return <><div className="cv-audit-split"><div className="cv-pdf-preview"><object title="Candidate CV PDF" data={pdfUrl} type="application/pdf"><iframe title="Candidate CV PDF" src={pdfUrl} /><div className="pdf-fallback"><span className="material-symbols-outlined">picture_as_pdf</span><strong>PDF preview unavailable</strong><small>Open the candidate document in a new tab.</small><a href={pdfUrl} target="_blank" rel="noreferrer">Open PDF <span className="material-symbols-outlined">open_in_new</span></a></div></object><a className="pdf-open-link" href={pdfUrl} target="_blank" rel="noreferrer">Open PDF <span className="material-symbols-outlined">open_in_new</span></a></div><div className="cv-parser-fields"><span className="artifact-label">Parser progress</span><div className="parser-steps">{['queued','extracting text','matching entities','complete'].map(stage => <span className={(cvParserStages[auditCandidate.id] || 'idle') === stage ? 'active' : (cvParserStages[auditCandidate.id] || 'idle') === 'complete' ? 'done' : ''} key={stage}>{stage}</span>)}</div><div className="artifact-grid"><div><span className="artifact-label">Extracted fields</span><strong>{auditArtifacts[auditCandidate.id]?.cv?.extracted || 'Awaiting parser run'}</strong><small>All extracted entities are shown below</small></div><div><span className="artifact-label">Status</span><strong>{(cvParserStages[auditCandidate.id] || 'idle') === 'complete' ? 'Complete' : (cvParserStages[auditCandidate.id] || 'idle') === 'idle' ? 'Ready' : 'Processing'}</strong><small>Candidate-linked artifact</small></div></div></div></div><div className="parsed-entity-list"><span className="artifact-label">All parsed CV information</span>{Object.keys(parsed).length ? <div className="parsed-card-grid">{groups.map(([label, values]) => <div className="parsed-info-card" key={label}><span className="artifact-label">{label}</span>{values.filter(Boolean).length ? <ul>{values.filter(Boolean).map((value: string) => <li key={value}>{value}</li>)}</ul> : <p>None detected</p>}</div>)}</div> : <p>Run parser to display every extracted field.</p>}<details className="parsed-raw"><summary>Raw parser payload</summary><pre>{JSON.stringify(parsed, null, 2)}</pre></details></div>{(auditArtifacts[auditCandidate.id]?.cv?.flags || []).map((flag: string) => <div className="audit-flag" key={flag}><span className="material-symbols-outlined">warning</span>{flag}</div>)}</>})()}</article>}
                   {auditPanel === 'video' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">Automated evidence artifact</span><h3>Video evaluation</h3><p>Video replaces the motivation letter · Candidate: {auditCandidate.applicant_name}</p></div><div><button className="m3-btn m3-btn-outlined" onClick={runVideoTranscription}>Run transcription</button><button className="m3-btn m3-btn-primary" onClick={runVideoEvaluation}>Evaluate video</button></div></div><div className="video-audit-preview"><video className="audit-video" controls preload="metadata" src={auditCandidate.video_url || undefined} onPlay={() => setVideoPlayingByCandidate(current => ({ ...current, [auditCandidate.id]: true }))} onPause={() => setVideoPlayingByCandidate(current => ({ ...current, [auditCandidate.id]: false }))}><track kind="captions" /><span>Video preview unavailable.</span></video><div><strong>{videoPlayingByCandidate[auditCandidate.id] ? 'Playing candidate video' : 'Candidate video ready'}</strong><small>Duration: {auditArtifacts[auditCandidate.id]?.video?.duration || '—'} · Transcript: {auditArtifacts[auditCandidate.id]?.video?.transcriptStatus || 'Not extracted'}</small></div><span className="confidence-chip">Confidence {auditArtifacts[auditCandidate.id]?.video?.confidence || '—'}</span></div><div className="parser-steps">{['queued','extracting transcript','evaluating','complete'].map(stage => <span className={(videoStages[auditCandidate.id] || 'idle') === stage ? 'active' : (videoStages[auditCandidate.id] || 'idle') === 'complete' ? 'done' : ''} key={stage}>{stage}</span>)}</div><div className="transcript-panel"><span className="artifact-label">Extracted transcript</span><p>{auditArtifacts[auditCandidate.id]?.video?.transcript || 'Run transcription to display the real transcript returned by Groq.'}</p></div><div className="claim-list"><span className="artifact-label">Model/rubric opinion · final decision remains human</span>{(auditArtifacts[auditCandidate.id]?.video?.claims || ['No opinion generated until a real transcript is available.']).map((claim: string) => <div key={claim}><span className="material-symbols-outlined">check</span>{claim}</div>)}</div></article>}
+                  {auditPanel === 'video' && <div className="human-decision-note">
+                    <strong>External vision review</strong>
+                    <span>Clicking Evaluate video sends up to three sampled video frames, the available transcript, and selected application/CV facts to Groq Qwen for analysis.</span>
+                  </div>}
+                  {auditPanel === 'video' && auditArtifacts[auditCandidate.id]?.vision_analysis && <article className="evidence-card full-evidence">
+                    <div className="evidence-title">
+                      <div>
+                        <span className="eyebrow">Multimodal contradiction review</span>
+                        <h3>Qwen video evidence</h3>
+                        <p>Review sampled visual frames and spoken claims against the application and parsed CV.</p>
+                      </div>
+                      <span className={`audit-status ${auditArtifacts[auditCandidate.id].contradiction_status === 'contradiction_found' ? 'status-needs-review' : auditArtifacts[auditCandidate.id].contradiction_status === 'no_contradiction_detected' ? 'status-verified' : 'status-in-review'}`}>
+                        {auditArtifacts[auditCandidate.id].contradiction_status || 'not checked'}
+                      </span>
+                    </div>
+                    <div className="verified-banner">
+                      {auditArtifacts[auditCandidate.id].vision_analysis.used
+                        ? `${auditArtifacts[auditCandidate.id].vision_analysis.model} analyzed ${auditArtifacts[auditCandidate.id].vision_analysis.frames?.length || 0} sampled frames.`
+                        : 'Vision analysis was not completed; no visual findings are available.'}
+                    </div>
+                    {(auditArtifacts[auditCandidate.id].checks || []).map((check: any, index: number) => (
+                      <section className="review-result-card" key={`${check.fact}-${index}`}>
+                        <div className="review-result-heading">
+                          <div>
+                            <span className="eyebrow">{check.fact} · {check.verdict}</span>
+                            <h4>{check.reference_source === 'parsed_cv' ? 'CV' : 'Application'} says: {check.reference_claim}</h4>
+                          </div>
+                        </div>
+                        <p>Video evidence: {check.video_claim}</p>
+                        {check.video_source === 'video_frame'
+                          ? <small>Frame {check.frame_index} at {check.frame_timestamp_seconds}s: {check.frame_observation}</small>
+                          : <small>Transcript quote: “{check.evidence_quote}”</small>}
+                        <p>{check.reason}</p>
+                      </section>
+                    ))}
+                    {(auditArtifacts[auditCandidate.id].flags || []).map((flag: string) => (
+                      <div className="audit-flag" key={flag}>
+                        <span className="material-symbols-outlined">warning</span>{flag}
+                      </div>
+                    ))}
+                  </article>}
                   {auditPanel === 'rag' && <article className="evidence-card full-evidence candidate-rag-panel">
                     <div className="evidence-title">
                       <div>
