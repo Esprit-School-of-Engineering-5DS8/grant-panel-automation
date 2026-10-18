@@ -129,6 +129,7 @@ Applicant accounts, sessions, and drafts are stored in `data/grant_panel.sqlite3
 - CVs must be PDF files up to 10 MB and 30 pages. Selectable PDF text is extracted directly; image-only pages are rendered and processed with RapidOCR. The applicant sees an inline PDF preview and the extracted text. OCR errors are reported rather than replaced with sample data.
 - An MP4, WebM, or MOV video up to 50 MB may be uploaded, but it is optional and is not recorded through the webcam.
 - A submitted application must include a CV owned by the signed-in account. The optional video is attached only if the applicant uploads one.
+- In the committee's **Video evaluation** tab, **Evaluate video** transcribes speech with Groq Whisper and compares explicit spoken facts against the application and parsed CV with Groq's text model. Contradictions include the spoken quote and the conflicting dossier value; uncertain or missing evidence is not treated as a confirmed contradiction. This is audio/transcript analysis only: no vision model is used to inspect video frames, and a human reviewer makes the final decision.
 
 ### Committee review and final decision
 

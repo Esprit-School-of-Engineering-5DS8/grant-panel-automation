@@ -723,16 +723,242 @@ def extract_video_transcript(payload: AdminArtifactPayload):
 def _video_evaluation_artifact(candidate: Dict[str, Any]) -> Dict[str, Any]:
     transcript = str((candidate.get("transcript") or "").strip())
     if not transcript:
-        return {"candidate_id": candidate_id(candidate), "status": "blocked", "source": "no-transcript", "checked_at": artifact_time(), "evaluation_status": "Not evaluated", "confidence": None, "claims": [], "flags": ["A real transcript is required before video evaluation. Run transcription first."]}
-    lower = transcript.lower()
-    claims = []
-    if any(term in lower for term in ("research", "project", "study", "machine learning", "data")):
-        claims.append("Transcript contains an academic or project focus.")
-    if any(term in lower for term in ("fund", "grant", "tuition", "financial", "support", "scholarship")):
-        claims.append("Transcript contains a funding or support purpose.")
-    if not claims:
-        claims.append("Transcript extracted; no configured rubric claim matched its content.")
-    return {"candidate_id": candidate_id(candidate), "status": "evaluated", "source": "transcript-rubric", "checked_at": artifact_time(), "evaluation_status": "Needs human review", "confidence": None, "claims": claims, "flags": []}
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "blocked",
+            "source": "no-transcript",
+            "checked_at": artifact_time(),
+            "evaluation_status": "Not evaluated",
+            "contradiction_status": "not_checked",
+            "contradictions": [],
+            "vision_analysis": {
+                "used": False,
+                "status": "not_performed",
+                "notice": "Only spoken claims can be checked; video frames are not analyzed.",
+            },
+            "claims": [
+                "Video-frame vision analysis is not used; this feature checks speech transcripts only."
+            ],
+            "flags": ["A real transcript is required before video evaluation. Run transcription first."],
+        }
+    if not GROQ_API_KEY:
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "unavailable",
+            "source": "groq-api-key-not-configured",
+            "checked_at": artifact_time(),
+            "evaluation_status": "Not evaluated",
+            "contradiction_status": "not_checked",
+            "contradictions": [],
+            "vision_analysis": {
+                "used": False,
+                "status": "not_performed",
+                "notice": "Only spoken claims can be checked; video frames are not analyzed.",
+            },
+            "claims": [
+                "Video-frame vision analysis is not used; this feature checks speech transcripts only."
+            ],
+            "flags": ["Set GROQ_API_KEY in the backend environment to check spoken claims against the application and CV."],
+        }
+
+    cv = candidate.get("cv_parsed") or {}
+    form = {
+        key: candidate.get(key)
+        for key in (
+            "applicant_name",
+            "school",
+            "major",
+            "degree_track",
+            "gpa",
+            "project_title",
+            "academic_experiences",
+            "leadership_experiences",
+        )
+        if candidate.get(key) not in (None, "", [])
+    }
+    cv_facts = {
+        key: cv.get(key)
+        for key in (
+            "applicant_name",
+            "institutions",
+            "degrees",
+            "extracted_gpa",
+            "publications",
+            "honors_awards",
+            "employers",
+        )
+        if cv.get(key) not in (None, "", [])
+    }
+    evidence = {
+        "application_form": form,
+        "parsed_cv": cv_facts,
+        "video_transcript": transcript[:12000],
+    }
+    system_prompt = (
+        "You are a careful evidence-comparison assistant. Compare only explicit factual claims "
+        "in the video transcript with the supplied application and CV facts. Flag a contradiction "
+        "only when both sides make incompatible claims about the same fact. Missing details, "
+        "additional details, paraphrases, and uncertain speech are not contradictions. Never "
+        "infer dishonesty or invent evidence. Return only a JSON object with a 'checks' array. "
+        "Each check must contain 'fact', 'reference_source' (application_form or parsed_cv), "
+        "'reference_claim', 'reference_quote' (an exact verbatim substring of that source's "
+        "supplied facts), 'video_claim', 'evidence_quote' (an exact verbatim substring of the "
+        "transcript), 'verdict' (contradiction, consistent, or inconclusive), 'reason', and "
+        "'confidence' (a number from 0 to 1). Include only facts actually discussed in the "
+        "transcript, up to 12 checks. If there are no comparable facts, return an empty array."
+    )
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": json.dumps(evidence, ensure_ascii=False),
+                    },
+                ],
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        content = response.json()["choices"][0]["message"]["content"]
+        checks = json.loads(content)["checks"]
+        if not isinstance(checks, list):
+            raise ValueError("The model response does not contain a checks list.")
+        validated_checks = []
+        normalized_transcript = " ".join(transcript.casefold().split())
+        for check in checks:
+            if not isinstance(check, dict):
+                raise ValueError("The model returned a malformed fact check.")
+            required_fields = (
+                "fact",
+                "reference_source",
+                "reference_claim",
+                "reference_quote",
+                "video_claim",
+                "evidence_quote",
+                "verdict",
+                "reason",
+                "confidence",
+            )
+            if any(not isinstance(check.get(field), str) for field in required_fields[:-1]):
+                raise ValueError("The model returned a fact check with missing text fields.")
+            if check["reference_source"] not in {"application_form", "parsed_cv"}:
+                raise ValueError("The model returned an invalid evidence source.")
+            if check["verdict"] not in {"contradiction", "consistent", "inconclusive"}:
+                raise ValueError("The model returned an invalid fact-check verdict.")
+            if not " ".join(check["evidence_quote"].casefold().split()) in normalized_transcript:
+                raise ValueError("A model-provided video quote was not found in the transcript.")
+            source_evidence = form if check["reference_source"] == "application_form" else cv_facts
+            normalized_reference = " ".join(
+                json.dumps(source_evidence, ensure_ascii=False).casefold().split()
+            )
+            if " ".join(check["reference_quote"].casefold().split()) not in normalized_reference:
+                raise ValueError("A model-provided dossier quote was not found in the selected source.")
+            if not isinstance(check.get("confidence"), (int, float)) or not 0 <= check["confidence"] <= 1:
+                raise ValueError("The model returned an invalid confidence value.")
+            validated_checks.append(check)
+
+        contradictions = [
+            check for check in validated_checks if check["verdict"] == "contradiction"
+        ]
+        sources_compared = ["application_form"]
+        if cv_facts:
+            sources_compared.append("parsed_cv")
+        missing_sources = [] if cv_facts else ["parsed_cv"]
+        contradiction_status = (
+            "contradiction_found"
+            if contradictions
+            else "inconclusive"
+            if missing_sources
+            or not validated_checks
+            or any(check["verdict"] == "inconclusive" for check in validated_checks)
+            else "no_contradiction_detected"
+        )
+        flags = []
+        if missing_sources:
+            flags.append("The CV could not be parsed; video claims were not compared against CV content.")
+        if not validated_checks:
+            flags.append("No comparable factual claims were detected in the transcript.")
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "complete",
+            "source": "groq-text-contradiction-review",
+            "checked_at": artifact_time(),
+            "evaluation_status": "Needs human review",
+            "contradiction_status": contradiction_status,
+            "sources_compared": sources_compared,
+            "missing_sources": missing_sources,
+            "checks": validated_checks,
+            "contradictions": contradictions,
+            "vision_analysis": {
+                "used": False,
+                "status": "not_performed",
+                "notice": "This review checks spoken claims from the audio transcript only; it does not analyze video frames with a vision model.",
+            },
+            "claims": [
+                (
+                    f"{check['verdict'].upper()} — {check['fact']} ({check['reference_source']}): "
+                    f"video says “{check['evidence_quote']}”; dossier says "
+                    f"“{check['reference_quote']}” ({check['reference_claim']}). "
+                    f"{check['reason']}"
+                )
+                for check in validated_checks
+            ] + [
+                "Vision model not used: this comparison analyzes the audio transcript only, not video frames."
+            ] + (
+                ["CV comparison unavailable because its contents were not parsed."]
+                if missing_sources
+                else []
+            ),
+            "flags": flags,
+        }
+    except requests.RequestException as exc:
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "failed",
+            "source": "groq-text-contradiction-review",
+            "checked_at": artifact_time(),
+            "evaluation_status": "Not evaluated",
+            "contradiction_status": "not_checked",
+            "contradictions": [],
+            "vision_analysis": {
+                "used": False,
+                "status": "not_performed",
+                "notice": "Only spoken claims can be checked; video frames are not analyzed.",
+            },
+            "claims": [
+                "Video-frame vision analysis is not used; this feature checks speech transcripts only."
+            ],
+            "flags": [f"Video contradiction review failed: {exc}"],
+        }
+    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "failed",
+            "source": "groq-text-contradiction-review",
+            "checked_at": artifact_time(),
+            "evaluation_status": "Not evaluated",
+            "contradiction_status": "not_checked",
+            "contradictions": [],
+            "vision_analysis": {
+                "used": False,
+                "status": "not_performed",
+                "notice": "Only spoken claims can be checked; video frames are not analyzed.",
+            },
+            "claims": [
+                "Video-frame vision analysis is not used; this feature checks speech transcripts only."
+            ],
+            "flags": [f"Video contradiction review returned invalid data: {exc}"],
+        }
 
 
 @app.post("/api/admin/evaluate-video")
