@@ -1,0 +1,185 @@
+/* CV vision panel: OCR bounding boxes + field labelling */
+
+.cvv-panel .cvv-head { align-items: flex-start; }
+.cvv-head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cvv-head-actions .m3-btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.cvv-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf9;
+}
+
+.cvv-legend { display: flex; flex-wrap: wrap; gap: 6px; max-width: 62%; }
+.cvv-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: .66rem;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cvv-legend-chip.off { opacity: .38; text-decoration: line-through; }
+.cvv-legend-chip.muted { cursor: default; color: var(--muted); }
+.cvv-legend-chip b { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cvv-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+
+.cvv-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.cvv-metric { display: flex; flex-direction: column; }
+.cvv-metric b { font-size: .78rem; color: var(--ink); }
+.cvv-metric small { color: var(--muted); font-size: .58rem; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.cvv-progress {
+  padding: 18px;
+  border: 1px dashed #c4cfe4;
+  border-radius: 10px;
+  background: #f6f9ff;
+}
+.cvv-progress p { margin: 4px 0 0; color: var(--muted); font-size: .72rem; }
+
+.cvv-error {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #f0c2c2;
+  border-radius: 10px;
+  background: #fef5f4;
+}
+.cvv-error > span { color: #c34b4b; font-size: 26px; }
+.cvv-error strong { font-size: .84rem; }
+.cvv-error p { margin: 3px 0 0; color: #8a4d4d; font-size: .72rem; line-height: 1.5; }
+.cvv-error .m3-btn { margin-left: auto; }
+
+.cvv-workspace { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
+
+.cvv-rail { flex: 0 0 108px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+.cvv-thumb { border: 1px solid var(--line); border-radius: 6px; background: #fff; padding: 5px; cursor: pointer; }
+.cvv-thumb img { width: 100%; display: block; border: 1px solid #e6e9ef; border-radius: 3px; }
+.cvv-thumb span { display: block; text-align: center; font-size: .6rem; color: var(--muted); margin-top: 4px; }
+.cvv-thumb.active { border-color: var(--cobalt); box-shadow: 0 0 0 2px #2457d633; }
+
+.cvv-canvas-col { flex: 1 1 auto; min-width: 0; }
+.cvv-canvas-tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cvv-source { display: inline-flex; align-items: center; gap: 6px; font-size: .68rem; color: var(--muted); }
+.cvv-source .material-symbols-outlined { font-size: 16px; }
+.cvv-zoom { display: flex; align-items: center; gap: 6px; }
+.cvv-zoom button { border: 1px solid var(--line); background: #fff; width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; border-radius: 6px; padding: 0; }
+.cvv-zoom button .material-symbols-outlined { font-size: 16px; }
+.cvv-zoom > span { font-size: .68rem; color: var(--muted); min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.cvv-canvas { background: #eef1f6; border: 1px solid var(--line); border-radius: 10px; padding: 18px; overflow: auto; max-height: 70vh; }
+.cvv-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 10px 34px rgba(16, 35, 63, .16); }
+.cvv-page img { display: block; width: 100%; height: auto; }
+
+.cvv-box {
+  position: absolute;
+  border: 2px solid;
+  border-radius: 3px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: background .12s ease, box-shadow .12s ease;
+}
+.cvv-box.active { z-index: 6; box-shadow: 0 0 0 2px #fff, 0 8px 20px rgba(16, 35, 63, .28); }
+.cvv-box.selected { z-index: 5; }
+.cvv-box-tag {
+  position: absolute;
+  top: -19px;
+  left: -2px;
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+
+.cvv-side { flex: 0 0 34%; min-width: 288px; max-width: 430px; }
+.cvv-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.cvv-tabs button {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 7px 16px;
+  font-size: .7rem;
+  font-weight: 800;
+  color: var(--muted);
+  cursor: pointer;
+}
+.cvv-tabs button.active { background: var(--cobalt); color: #fff; border-color: var(--cobalt); }
+
+.cvv-table { border: 1px solid var(--line); border-radius: 10px; overflow: auto; max-height: 62vh; background: #fff; }
+.cvv-table-head {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) 50px;
+  gap: 10px;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  background: #fffdf9;
+  border-bottom: 1px solid var(--line);
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+.cvv-row {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) 50px;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid #eef1f6;
+  background: #fff;
+  cursor: pointer;
+  font-size: .72rem;
+  color: var(--ink);
+}
+.cvv-row:last-child { border-bottom: 0; }
+.cvv-row:hover { background: #f4f8ff; }
+.cvv-row.selected { background: #e9f0ff; }
+.cvv-row.dim { opacity: .4; }
+.cvv-row-label { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+.cvv-row-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvv-row-score { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cvv-empty { margin: 0; padding: 20px; color: var(--muted); font-size: .74rem; }
+
+.cvv-json {
+  margin: 0;
+  max-height: 62vh;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 10px;
+  background: #0f1b2b;
+  color: #dbe7f7;
+  font-size: .66rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cvv-side-foot { margin-top: 10px; color: var(--muted); font-size: .64rem; }
+.cvv-side-foot b { color: var(--ink); }
+
+@media (max-width: 1180px) {
+  .cvv-legend { max-width: 100%; }
+  .cvv-workspace { flex-wrap: wrap; }
+  .cvv-side { flex: 1 1 100%; max-width: none; }
+  .cvv-rail { flex-direction: row; flex: 1 1 100%; max-height: none; }
+  .cvv-thumb { flex: 0 0 96px; }
+}
