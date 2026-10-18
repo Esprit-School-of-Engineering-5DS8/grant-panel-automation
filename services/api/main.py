@@ -26,12 +26,14 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 import requests
 import json
+import re
 import glob
 import time
 from datetime import datetime, timezone
 import shutil
 import subprocess
 import tempfile
+from urllib.parse import quote
 from pypdf import PdfReader
 
 from engine.deterministic_checks import check_proposal_compliance
@@ -41,6 +43,14 @@ from engine.traceability_verifier import verify_traceability
 from multimodal.figure_verifier import verify_figure_text_consistency
 from multimodal.pdf_parser import extract_proposal_pdf
 from multimodal.cv_parser import parse_cv_ats, verify_cv_multimodal_consistency
+from multimodal.cv_vision import (
+    extract_cv_vision,
+    render_pdf_pages,
+    render_pdf_bytes,
+    latex_to_pdf_bytes,
+    ocr_available,
+    ocr_error,
+)
 
 app = FastAPI(
     title="Yale Fellowship & Scholarship Review API",
@@ -67,24 +77,27 @@ HAZEM_CV_PATH = os.getenv("GRANT_PANEL_HAZEM_CV_PATH", os.path.join(PROJECT_ROOT
 HAZEM_VIDEO_PATH = os.getenv("GRANT_PANEL_HAZEM_VIDEO_PATH", os.path.join(PROJECT_ROOT, "WIN_20261015_13_04_11_Pro.mp4"))
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GROQ_TRANSCRIPTION_MODEL = os.getenv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo")
+GROQ_CV_LABEL_MODEL = os.getenv("GROQ_CV_LABEL_MODEL", "qwen/qwen3.8-27b")
+CV_OCR_CACHE_DIR = os.path.join(DATA_DIR, "cv_ocr_cache")
 
 os.makedirs(PROPOSALS_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(CORPUS_DIR, exist_ok=True)
+os.makedirs(CV_OCR_CACHE_DIR, exist_ok=True)
 
 # Request Models
 class StudentApplicationPayload(BaseModel):
     id: Optional[str] = None
-    title: str
+    title: Optional[str] = "Open Doors Application"
     applicant_name: str
     school: Optional[str] = "Yale College"
-    major: str
-    gpa: float
+    major: Optional[str] = "Undeclared"
+    gpa: Optional[float] = 0.0
     page_count: Optional[int] = 8
-    requested_grant: float
-    financials: Dict[str, Any]
-    budget: Optional[Dict[str, Any]] = None
-    sections: Dict[str, str]
+    requested_grant: Optional[float] = 0.0
+    financials: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    budget: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    sections: Optional[Dict[str, str]] = Field(default_factory=dict)
     video_transcript: Optional[str] = ""
     cv_latex: Optional[str] = ""
     video_url: Optional[str] = None
@@ -410,6 +423,7 @@ def submit_student_application(app_data: StudentApplicationPayload):
         }
     }
 
+    os.makedirs(PROPOSALS_DIR, exist_ok=True)
     save_path = os.path.join(PROPOSALS_DIR, f"{app_id}.json")
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(application_dict, f, indent=2)
@@ -428,9 +442,20 @@ def parse_and_verify_cv(payload: ParseCvPayload):
     Optionally cross-verifies against declared form parameters and video pitch transcript.
     """
     cv_content = payload.cv_content
-    if (not cv_content.strip()) and payload.form_data and payload.form_data.get("id") == "LOCAL-HAZEM-MRAD" and os.path.exists(HAZEM_CV_PATH):
-        reader = PdfReader(HAZEM_CV_PATH)
-        cv_content = "\n".join(page.extract_text() or "" for page in reader.pages)
+    if not cv_content.strip() and payload.form_data:
+        cid = payload.form_data.get("id") or ""
+        cv_fn = payload.form_data.get("cv_filename") or payload.form_data.get("cvFileName")
+        pdf_path = None
+        if cv_fn and os.path.exists(os.path.join(UPLOADS_DIR, cv_fn)):
+            pdf_path = os.path.join(UPLOADS_DIR, cv_fn)
+        elif cid:
+            pdf_path = _resolve_candidate_pdf(cid)
+        if pdf_path and os.path.exists(pdf_path):
+            try:
+                reader = PdfReader(pdf_path)
+                cv_content = "\n".join(page.extract_text() or "" for page in reader.pages)
+            except Exception:
+                pass
     parsed = parse_cv_ats(cv_content)
     multimodal_res = None
     if payload.form_data:
@@ -647,8 +672,8 @@ def list_proposals():
                         candidate_id_value = data.get("id", file.replace(".json", ""))
                         normalized_financials = data.get("financials") or {"demonstrated_need": data.get("requested_grant", 75000.0), "outside_scholarships": 0.0}
                         normalized_education = data.get("education_entries", data.get("educationEntries")) or [{"institution": data.get("school", "Yale College"), "degree": data.get("degree_track", data.get("major", "Academic Studies")), "field": data.get("major", "Academic Studies"), "year": data.get("graduation_year", "2027"), "gpa": str(data.get("gpa", 3.8))}]
-                        normalized_academic = data.get("academic_experiences", data.get("academicExperiences")) or [data.get("sections", {}).get("abstract", "Demo research experience from the synthetic proposal fixture.")]
-                        normalized_leadership = data.get("leadership_experiences", data.get("leadershipExperiences")) or [data.get("sections", {}).get("impact_and_dissemination", "Demo leadership and public-impact experience from the synthetic proposal fixture.")]
+                        normalized_academic = data.get("academic_experiences", data.get("academicExperiences")) or ([data.get("sections", {}).get("abstract")] if data.get("sections", {}).get("abstract") else [])
+                        normalized_leadership = data.get("leadership_experiences", data.get("leadershipExperiences")) or ([data.get("sections", {}).get("impact_and_dissemination")] if data.get("sections", {}).get("impact_and_dissemination") else [])
                         record.update({
                             "id": candidate_id_value,
                             "filename": file,
@@ -682,28 +707,139 @@ def list_proposals():
                             "video_duration": data.get("video_duration"),
                             "submitted_at": data.get("submitted_at", data.get("created_at")),
                             "updated_at": data.get("updated_at", data.get("submitted_at", data.get("created_at"))),
-                            "demo_dataset": "Demo / synthetic candidates",
-                            "video_metadata": data.get("video_metadata") or {"source": "Demo artifact", "status": "Not yet submitted", "playback": "Local generated demo video"}
+                            "demo_dataset": data.get("demo_dataset", "Applicant dossier"),
+                            "video_metadata": data.get("video_metadata") or {"source": "Applicant submission", "status": "Submitted" if data.get("video_url") else "Not yet submitted", "playback": "Candidate video"}
                         })
                         proposals.append(record)
                 except Exception as e:
-                    print(f"Error reading {file}: {e}")
-    proposals.append({
-        "id": "LOCAL-HAZEM-MRAD", "filename": "local-test-hazem-mrad.json", "title": "AI Engineering and Production Delivery Portfolio", "pi_name": "Hazem Mrad", "applicant_name": "Hazem Mrad", "email": "hazem.mrad@esprit.tn", "phone": "+216-94282894", "citizenship": "Tunisia", "school": "ESPRIT", "institution": "ESPRIT", "major": "Data Science & Artificial Intelligence", "degree_track": "Engineering Degree · Data Science & Artificial Intelligence", "graduation_year": "2027", "gpa": 3.8, "requested_grant": 12000.0, "page_count": 2,
-        "education_entries": [{"institution": "ESPRIT", "degree": "Engineering Degree", "field": "Data Science & Artificial Intelligence", "year": "2027", "gpa": "3.80"}], "academic_experiences": ["Built production LLM systems using RAG, GraphRAG, Neo4j, and computer vision for regulated industries.", "MatchUPZ sports dashboard with real-time YOLO player tracking at 94% accuracy."], "leadership_experiences": ["Secretary General and Media Manager of DeepFlow AI Club, coordinating operations and communications for a 100+ member organization."], "cv_filename": "cv-hazem-mrad-toptal.pdf", "pdf_url": "/api/test-assets/hazem-mrad/cv.pdf", "video_url": "/api/test-assets/hazem-mrad/video.mp4", "video_status": "Local test recording", "video_metadata": {"source": "Authorized local test asset", "label": "Local test candidate · Hazem Mrad", "playback": "Real local MP4", "transcription_engine": "Groq Whisper Large v3 Turbo"}, "video_transcript": "Hello, my name is Hazem and I'm applying for the Open Doors program to continue my studies in computer science and global affairs. My academic interests focus on using machine learning and data analysis to improve humanitarian supply logistics. I am particularly interested in making resource allocation more transparent, efficient and fair during crisis. Through my studies and research experience, I have developed skills in Python, data analysis, optimization and machine learning. I have also worked on projects involving simulated humanitarian data sets and equitable distribution strategies. And beyond academics, I have been involved in student-led community initiatives where I help coordinate technical support for organizations working with displaced and underserved communities. This opportunity will help me deepen my education access, advance research resources, and develop solutions with real social impact. I am motivated to contribute my technical skills, curiosity and commitment to public service. Thank you for considering my application.", "financials": {"cost_of_attendance": 18000.0, "parent_share": 4000.0, "student_share": 2000.0, "outside_scholarships": 0.0, "demonstrated_need": 12000.0, "test_data": True}, "budget": {"requested_grant": 12000.0, "test_data": True}, "sections": {"abstract": "Local test record for validating the Open Doors audit workflow.", "impact_and_dissemination": "Production AI delivery for humanitarian supply logistics, machine learning, and data analysis."}, "local_test": True, "local_test_label": "Local test candidate · Hazem Mrad", "demo_dataset": "Authorized local test data (not synthetic cohort / not production)", "submitted_at": None, "updated_at": None, "ground_truth": {"test_data": True}
-    })
+                    continue
     return proposals
+
+def _resolve_candidate_pdf(proposal_id: str) -> Optional[str]:
+    """Locate a candidate's CV PDF across uploads and proposals."""
+    json_path = os.path.join(PROPOSALS_DIR, f"{proposal_id}.json")
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                cv_file = data.get("cv_filename") or data.get("cvFileName")
+                if cv_file and os.path.exists(os.path.join(UPLOADS_DIR, cv_file)):
+                    return os.path.join(UPLOADS_DIR, cv_file)
+                if cv_file and os.path.exists(os.path.join(PROPOSALS_DIR, "pdfs", cv_file)):
+                    return os.path.join(PROPOSALS_DIR, "pdfs", cv_file)
+        except Exception:
+            pass
+    for folder in [UPLOADS_DIR, os.path.join(PROPOSALS_DIR, "pdfs")]:
+        for suffix in (".pdf", ""):
+            p = os.path.join(folder, f"{proposal_id}{suffix}")
+            if os.path.exists(p):
+                return p
+    return None
 
 @app.get("/api/proposals/{proposal_id}/pdf")
 def get_proposal_pdf(proposal_id: str):
-    """Serve the candidate's local synthetic PDF inline for the audit preview."""
-    candidates = [proposal_id, proposal_id.replace("YALE-", "PROP-")]
-    for candidate_id in candidates:
-        for suffix in (".pdf", ""):
-            pdf_path = os.path.join(PROPOSALS_DIR, "pdfs", f"{candidate_id}{suffix}")
-            if os.path.exists(pdf_path):
-                return FileResponse(pdf_path, media_type="application/pdf", content_disposition_type="inline")
+    """Serve candidate PDF inline for audit preview."""
+    pdf_path = _resolve_candidate_pdf(proposal_id)
+    if pdf_path and os.path.exists(pdf_path):
+        return FileResponse(pdf_path, media_type="application/pdf", content_disposition_type="inline")
     raise HTTPException(status_code=404, detail=f"Candidate PDF '{proposal_id}' not found")
+
+
+def _cv_ocr_dir(proposal_id: str) -> str:
+    return os.path.join(CV_OCR_CACHE_DIR, re.sub(r"[^A-Za-z0-9_-]", "_", proposal_id))
+
+
+def _find_candidate(proposal_id: str) -> Dict[str, Any]:
+    try:
+        for candidate in list_proposals():
+            if candidate.get("id") == proposal_id:
+                return candidate
+    except Exception:
+        pass
+    return {}
+
+
+def _resolve_cv_document(proposal_id: str, candidate: Dict[str, Any]):
+    """
+    Pick the best CV document for a candidate:
+    1. a real uploaded CV file,
+    2. a CV rendered from the deposited LaTeX source,
+    3. the proposal PDF as a last resort.
+    """
+    cv_file = candidate.get("cv_filename") or candidate.get("cvFileName")
+    if cv_file and os.path.exists(os.path.join(UPLOADS_DIR, cv_file)):
+        return "uploaded-cv", os.path.join(UPLOADS_DIR, cv_file)
+    cv_latex = candidate.get("cv_latex")
+    if cv_latex and str(cv_latex).strip():
+        return "cv-latex", latex_to_pdf_bytes(str(cv_latex), candidate.get("applicant_name") or "")
+    fallback = _resolve_candidate_pdf(proposal_id)
+    return ("proposal-pdf", fallback) if fallback else (None, None)
+
+
+@app.get("/api/admin/cv-ocr/{proposal_id}/pages/{page_index}")
+def get_cv_ocr_page(proposal_id: str, page_index: int):
+    """Serve a rendered CV page image produced by the vision pipeline."""
+    page_path = os.path.join(_cv_ocr_dir(proposal_id), f"page-{page_index}.png")
+    if not os.path.exists(page_path):
+        raise HTTPException(status_code=404, detail="Rendered CV page not found. Run the CV vision extraction first.")
+    return FileResponse(page_path, media_type="image/png")
+
+
+@app.get("/api/admin/cv-ocr/{proposal_id}")
+def run_cv_ocr(proposal_id: str, force: bool = False):
+    """
+    Render the candidate CV, OCR every page for text + bounding boxes, and label
+    each line into a CV field using Groq. Results and page images are cached on disk.
+    """
+    cache_dir = _cv_ocr_dir(proposal_id)
+    result_path = os.path.join(cache_dir, "result.json")
+    if not force and os.path.exists(result_path):
+        try:
+            with open(result_path, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    candidate = _find_candidate(proposal_id)
+    source, payload = _resolve_cv_document(proposal_id, candidate)
+    if payload is None:
+        raise HTTPException(status_code=404, detail=f"No CV document found for candidate '{proposal_id}'")
+
+    if not ocr_available():
+        return {
+            "status": "unavailable",
+            "proposal_id": proposal_id,
+            "engine": "none",
+            "error": ocr_error() or "OCR engine unavailable",
+            "message": "Install an OCR backend with `pip install rapidocr` (or `rapidocr-onnxruntime`).",
+        }
+
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        pages = render_pdf_bytes(payload) if isinstance(payload, bytes) else render_pdf_pages(payload)
+        for page in pages:
+            with open(os.path.join(cache_dir, f"page-{page['index']}.png"), "wb") as fh:
+                fh.write(page["png"])
+        result = extract_cv_vision(
+            "" if isinstance(payload, bytes) else str(payload),
+            proposal_id,
+            groq_api_key=GROQ_API_KEY,
+            label_model=GROQ_CV_LABEL_MODEL,
+            pages=pages,
+            page_url_builder=lambda pid, idx: f"/api/admin/cv-ocr/{quote(pid, safe='')}/pages/{idx}",
+        )
+        result["document_source"] = source
+        result["document_name"] = candidate.get("cv_filename") or f"{proposal_id}.pdf"
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"CV vision extraction failed: {exc}")
+
+    try:
+        with open(result_path, "w", encoding="utf-8") as fh:
+            json.dump(result, fh)
+    except OSError:
+        pass
+    return result
+
 
 @app.get("/api/proposals/{proposal_id}")
 def get_proposal(proposal_id: str):
