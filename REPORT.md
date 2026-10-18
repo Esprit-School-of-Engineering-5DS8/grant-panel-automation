@@ -8,11 +8,11 @@
 ## 1. Executive Summary & Problem Formulation
 
 ### 1.1 Context and Real-World Friction
-Grant awarding bodies and institutional fellowship committees (e.g., Horizon Europe, NSF, Yale Graduate Fellowships) handle substantial volumes of multidisciplinary proposals under severe time constraints. In traditional peer-review workflows, systemic procedural defects frequently compromise impartiality and rigour:
+Grant awarding bodies and institutional fellowship committees (e.g., Yale University Student Financial Services, NSF, and graduate fellowship boards) handle substantial volumes of multidisciplinary applications under severe time constraints. In traditional peer-review workflows, systemic procedural defects frequently compromise impartiality and rigour:
 1. **Grade Inflation & Halo Effects:** Monolithic or hurried reviewers compress evaluations towards the top-middle (3.8–4.5 out of 5), offering generic praise while failing to penalize critical financial or methodological non-compliances.
 2. **Sequential Anchoring & Conformity:** In multi-reviewer chains ($R_1 \rightarrow R_2 \rightarrow R_3$) or open chat deliberations, the initial reviewer anchors consensus, suppressing divergent expert scrutiny.
 3. **Cross-Modal Blindspots:** Reviewers rarely cross-check claims in the text abstract against numerical axes in embedded figure charts, nor do they verify spoken statements in 2-minute motivation video pitches against deposited CV credentials.
-4. **Calculational & Administrative Fatigue:** Arithmetical checks (indirect cost caps, subcontracting ceilings, scholarship need budgets) waste valuable scientific cognitive bandwidth when performed manually by human evaluators.
+4. **Calculational & Administrative Fatigue:** Arithmetical checks (student share and cost-of-attendance reconciliation, technology allowance caps, and scholarship need budgets) waste valuable scientific cognitive bandwidth when performed manually by human evaluators.
 
 ### 1.2 System Positioning
 **Grant Panel Simulator** is an automated decision-support system designed to empower a human committee chair. It explicitly **never executes automated awards**. Instead, it executes an 8-stage pipeline enforcing strict separation of concerns:
@@ -88,7 +88,7 @@ The pipeline is orchestrated end-to-end within **n8n** (`workflows/grant_panel_s
 
 ### Stage Breakdown & Invariants:
 1. **Stage 1 (Reception & Parsing):** Parses proposal PDF and 2-minute video pitch (ASR Whisper).
-2. **Stage 2 (Deterministic Code Checks):** Verifies consortium size ($\ge 3$), page counts ($\le 15$), subcontracting cap ($\le 15\%$), and the 25% indirect cost flat rate rule. Non-compliant proposals exit early with deterministic rejection notices.
+2. **Stage 2 (Deterministic Code Checks):** Verifies Satisfactory Academic Progress (SAP, GPA $\ge 3.00$), dossier page limit ($\le 15$), the standard student share ($3,700), and the $2,500 computer allowance cap. Non-compliant applications exit early with deterministic rejection notices.
 3. **Stage 3 (Round 1 Independent Evaluators):** Dispatches the proposal to three parallel evaluators in isolated contexts:
    - Technical Evaluator (Excellence & multimodal figure verification)
    - Impact Evaluator (Exploitation & video pitch consistency)

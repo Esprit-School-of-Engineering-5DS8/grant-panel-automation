@@ -16,6 +16,12 @@ data/cv_ocr_cache/
 frontend/node_modules/
 frontend/dist/
 
+# Local development environment and generated applicant runtime data
+.venv/
+data/synthetic_proposals/
+data/student_uploads/
+audit-esprit-grant-panel.html
+
 # Local applicant media and private documents
 *.mp4
 Advanced DL-Exam-6.pdf

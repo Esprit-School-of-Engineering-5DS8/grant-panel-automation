@@ -33,7 +33,7 @@ Proposal:
 
 #### Version 2 (Calibrated & Anchored - Production)
 ```text
-You are an independent Senior Panel Reviewer for the Horizon-AI 2026 Programme, evaluating Criterion: [{{CRITERION_NAME}}].
+You are an independent Senior Panel Reviewer for the Yale Fellowship & Scholarship Programme, evaluating Criterion: [{{CRITERION_NAME}}].
 
 ### Scoring Rubric (Anchored Scale):
 - 0.0: Non-compliant / Fails completely.
@@ -118,7 +118,7 @@ Reviewer 3: {{review_3}}
 
 #### Version 2 (Structured Hierarchical Arbitration)
 ```text
-You are the Panel Chair (Président du Comité) for Horizon-AI 2026.
+You are the Panel Chair (Président du Comité) for the Yale Fellowship Committee.
 A significant divergence has been detected between independent reviewers:
 - Technical Reviewer: Score {{tech_score}} | Summary: {{tech_summary}}
 - Impact Reviewer: Score {{impact_score}} | Summary: {{impact_summary}}

@@ -9,7 +9,7 @@ Stages
 2. Detect text lines and their pixel bounding boxes with RapidOCR (onnxruntime).
 3. Classify each OCR line into a CV field label
    (Name, Introduction, Education, Experience, Projects, Skills, Personal, Other)
-   using a Groq chat model, with a deterministic keyword heuristic as a fallback.
+   using the configured Groq chat model.
 
 The output is a JSON-ready payload that a frontend can render as labelled
 bounding boxes over the page image plus a structured field table.
@@ -46,7 +46,7 @@ CV_FIELD_LABELS = [
 DEFAULT_LABEL_MODEL = "llama-3.3-70b-versatile"
 DEFAULT_RENDER_DPI = 150
 MAX_PAGES = 6
-MAX_LINES_FOR_LLM = 400
+MAX_LINES_PER_LLM_REQUEST = 60
 
 
 # ---------------------------------------------------------------------------
@@ -227,68 +227,6 @@ def _ocr_image(image_bytes: bytes) -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# Heuristic labelling (fallback + gap filling)
-# ---------------------------------------------------------------------------
-_SECTION_KEYWORDS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
-    ("Experience", ("work experience", "professional experience", "employment", "experience", "career", "leadership", "volunteering", "activities")),
-    ("Education", ("education", "academic background", "academics", "studies")),
-    ("Projects", ("projects", "project", "publications", "publication", "research", "awards", "honors", "certificates")),
-    ("Skills", ("skills", "technical skills", "computer skills", "languages", "technologies", "tools", "competencies")),
-    ("Introduction", ("profile", "summary", "objective", "about me", "introduction")),
-    ("Personal", ("personal information", "personal details", "contact information", "contact", "details")),
-)
-
-_CONTACT_RE = re.compile(r"(@|https?://|www\.|linkedin|\+?\d[\d ()-]{7,}\d)", re.IGNORECASE)
-_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z'.\- ]{2,48}$")
-
-
-def _normalise(text: str) -> str:
-    return re.sub(r"[^a-z0-9 ]+", " ", text.lower()).strip()
-
-
-def _detect_header(text: str) -> Optional[str]:
-    """Return the field label when a line is a short section heading, else None."""
-    norm = _normalise(text)
-    if not norm or len(norm.split()) > 5:
-        return None
-    for label, keywords in _SECTION_KEYWORDS:
-        if any(norm == kw or norm.startswith(kw) for kw in keywords):
-            return label
-    return None
-
-
-def heuristic_label_lines(lines: List[Dict[str, Any]]) -> List[str]:
-    """Deterministic keyword-based labelling used when the LLM is unavailable."""
-    labels: List[str] = []
-    current = "Other"
-    name_assigned = False
-    for line in lines:
-        text = line.get("text", "")
-        header = _detect_header(text)
-        assigned: Optional[str] = None
-        if header:
-            current = header
-            assigned = header
-
-        if assigned is None and _CONTACT_RE.search(text):
-            assigned = "Personal"
-
-        if assigned is None and not name_assigned and text.strip():
-            words = text.strip().split()
-            if (
-                line["rect"][1] < 260  # near top of the page
-                and 1 <= len(words) <= 4
-                and not any(ch.isdigit() for ch in text)
-                and _NAME_RE.match(text.strip()) is not None
-                and current == "Other"
-            ):
-                assigned = "Name"
-                name_assigned = True
-
-        labels.append(assigned or (current if current != "Other" else "Other"))
-    return labels
-
-
 # ---------------------------------------------------------------------------
 # Groq labelling
 # ---------------------------------------------------------------------------
@@ -300,9 +238,23 @@ def _label_with_groq(
     """Ask a Groq chat model to classify OCR lines; returns id/label/confidence list."""
     import requests
 
+    if len(lines) > MAX_LINES_PER_LLM_REQUEST:
+        assignments: List[Dict[str, Any]] = []
+        for start in range(0, len(lines), MAX_LINES_PER_LLM_REQUEST):
+            batch = _label_with_groq(lines[start : start + MAX_LINES_PER_LLM_REQUEST], api_key, model)
+            if not batch:
+                raise ValueError(f"CV label model returned no assignments for OCR lines starting at {start}.")
+            for item in batch:
+                local_id = re.fullmatch(r"l(\d+)", str(item.get("id", "")))
+                if local_id is None:
+                    raise ValueError("CV label model returned an invalid line identifier.")
+                item["id"] = f"l{start + int(local_id.group(1))}"
+            assignments.extend(batch)
+        return assignments
+
     payload_lines = [
         {"id": f"l{idx}", "page": line.get("page"), "text": line["text"]}
-        for idx, line in enumerate(lines[:MAX_LINES_FOR_LLM])
+        for idx, line in enumerate(lines)
     ]
     system_prompt = (
         "You are a CV / resume layout analyst. You receive OCR text lines from a "
@@ -350,10 +302,13 @@ def _label_with_groq(
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
-def _merge_labels(lines: List[Dict[str, Any]], assignments: Optional[List[Dict[str, Any]]]) -> Tuple[List[str], str]:
-    heuristic = heuristic_label_lines(lines)
+def _merge_labels(
+    lines: List[Dict[str, Any]],
+    assignments: Optional[List[Dict[str, Any]]],
+    source: str = "groq",
+) -> Tuple[List[str], str]:
     if not assignments:
-        return heuristic, "heuristic"
+        raise ValueError("CV label model returned no line assignments.")
 
     by_index: Dict[int, Dict[str, Any]] = {}
     for item in assignments:
@@ -366,37 +321,29 @@ def _merge_labels(lines: List[Dict[str, Any]], assignments: Optional[List[Dict[s
         if label not in CV_FIELD_LABELS:
             # Light normalisation of common variants.
             label = _canonical_label(label)
-        if position < len(heuristic):
+        if position < len(lines) and label in CV_FIELD_LABELS:
             by_index[position] = {"label": label, "confidence": item.get("confidence")}
 
-    if not by_index:
-        return heuristic, "heuristic"
+    if len(by_index) != len(lines):
+        raise ValueError("CV label model did not provide one valid label for every OCR line.")
 
     labels: List[str] = []
     confidences: List[float] = []
-    for idx in range(len(heuristic)):
-        entry = by_index.get(idx)
-        if entry and entry["label"] in CV_FIELD_LABELS:
-            labels.append(entry["label"])
-        else:
-            labels.append(heuristic[idx])
-        conf = entry.get("confidence") if entry else None
+    for idx in range(len(lines)):
+        entry = by_index[idx]
+        labels.append(entry["label"])
+        conf = entry.get("confidence")
         try:
-            confidences.append(float(conf))  # type: ignore[arg-type]
+            confidence = float(conf)  # type: ignore[arg-type]
         except (TypeError, ValueError):
-            confidences.append(0.6)
+            confidence = 0.6
+        confidences.append(min(1.0, max(0.0, confidence)))
 
     # Re-attach confidences on the line dicts for downstream use.
     for idx, line in enumerate(lines):
         line["label_confidence"] = round(confidences[idx], 3)
 
-    # Section headers should inherit their section even if the model said "Other".
-    for idx, line in enumerate(lines):
-        if labels[idx] == "Other":
-            header = _detect_header(line.get("text", ""))
-            if header:
-                labels[idx] = header
-    return labels, "groq"
+    return labels, source
 
 
 def _canonical_label(label: str) -> str:
@@ -420,6 +367,57 @@ def _canonical_label(label: str) -> str:
     return mapping.get(norm, "Other")
 
 
+_SECTION_PATTERNS: List[Tuple[str, str]] = [
+    (r"\b(education|academic background|academic qualifications|qualifications)\b", "Education"),
+    (r"\b(experience|work experience|professional experience|employment|internships?)\b", "Experience"),
+    (r"\b(projects?|portfolio)\b", "Projects"),
+    (r"\b(skills?|technical skills|technologies|competencies|toolkit)\b", "Skills"),
+    (r"\b(personal|contact|details)\b", "Personal"),
+    (r"\b(introduction|profile|summary|objective|about me)\b", "Introduction"),
+]
+
+
+def _label_with_heuristic(lines: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Deterministic fallback labeller used when the Groq model is unavailable.
+
+    It walks the OCR lines in reading order, tracks the most recent recognised
+    section heading, and tags each following line with that section.
+    """
+    assignments: List[Dict[str, Any]] = []
+    heading = "Other"
+    for index, line in enumerate(lines):
+        text = str(line.get("text", "")).strip()
+        lowered = text.lower()
+        label: Optional[str] = None
+        for pattern, name in _SECTION_PATTERNS:
+            if re.search(pattern, lowered):
+                label = name
+                heading = name
+                break
+        if label is None:
+            looks_like_contact = (
+                "@" in text
+                or "linkedin" in lowered
+                or "github" in lowered
+                or bool(re.search(r"\+?\d[\d\s().-]{6,}\d", text))
+            )
+            looks_like_name = (
+                index <= 1
+                and 1 <= len(text.split()) <= 4
+                and not re.search(r"\d|@", text)
+                and bool(re.search(r"[A-Za-z]", text))
+            )
+            if looks_like_contact:
+                label = "Personal"
+            elif looks_like_name:
+                label = "Name"
+                heading = "Name"
+            else:
+                label = heading
+        assignments.append({"id": f"l{index}", "label": label, "confidence": 0.55})
+    return assignments
+
+
 def extract_cv_vision(
     pdf_path: str,
     proposal_id: str,
@@ -430,6 +428,7 @@ def extract_cv_vision(
     pages: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Run the full render -> OCR -> label pipeline and return a JSON-ready result."""
+    notice: Optional[str] = None
     if pages is None:
         pages = render_pdf_pages(pdf_path, dpi=dpi)
 
@@ -440,19 +439,23 @@ def extract_cv_vision(
             line["page"] = page["index"]
             all_lines.append(line)
 
-    labelled_by = "heuristic"
-    if groq_api_key and all_lines:
+    if not all_lines:
+        raise RuntimeError("OCR found no readable text in the uploaded CV.")
+    if groq_api_key.strip():
         try:
             assignments = _label_with_groq(all_lines, groq_api_key, label_model)
-            labels, labelled_by = _merge_labels(all_lines, assignments)
-        except Exception:
-            labels, labelled_by = heuristic_label_lines(all_lines), "heuristic"
+            labels, labelled_by = _merge_labels(all_lines, assignments, "groq")
+        except Exception as error:  # noqa: BLE001 - degrade instead of failing the audit
+            assignments = _label_with_heuristic(all_lines)
+            labels, labelled_by = _merge_labels(all_lines, assignments, "heuristic")
+            notice = (
+                "The Groq CV label model was unavailable "
+                f"({type(error).__name__}: {error}); fields were labelled by the deterministic heuristic labeller."
+            )
     else:
-        labels = heuristic_label_lines(all_lines)
-
-    # Default label confidence when the heuristic path was used.
-    for line in all_lines:
-        line.setdefault("label_confidence", 0.6)
+        assignments = _label_with_heuristic(all_lines)
+        labels, labelled_by = _merge_labels(all_lines, assignments, "heuristic")
+        notice = "No GROQ_API_KEY is configured; fields were labelled by the deterministic heuristic labeller."
 
     pages_meta = []
     for page in pages:
@@ -523,10 +526,11 @@ def extract_cv_vision(
     return {
         "status": "complete",
         "proposal_id": proposal_id,
-        "engine": "rapidocr+groq" if labelled_by == "groq" else "rapidocr+heuristic",
+        "engine": f"rapidocr+{labelled_by}",
         "ocr_engine": "RapidOCR (PP-OCR, onnxruntime)",
-        "label_model": label_model if labelled_by == "groq" else "deterministic-heuristic",
+        "label_model": label_model,
         "labelled_by": labelled_by,
+        "notice": notice,
         "labels": CV_FIELD_LABELS,
         "page_count": len(pages),
         "pages": pages_meta,

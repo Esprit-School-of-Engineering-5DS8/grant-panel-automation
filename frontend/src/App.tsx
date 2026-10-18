@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './index.css'
 import CvVisionPanel from './components/CvVisionPanel'
+import VideoPanel from './components/VideoPanel'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 const apiUrl = (path: string) => `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
@@ -121,7 +122,7 @@ const getUserSubmittedAtKey = (email: string) => `openDoorsSubmittedAt_${email.t
 
 export function App() {
   // Top-Level Portal Mode: Student Portal vs. Committee Admin Console
-  const [portalMode, setPortalMode] = useState<'student' | 'admin'>('student')
+  const [portalMode, setPortalMode] = useState<'student' | 'admin'>(() => readStoredJson<{ email: string } | null>('openDoorsAdminSession', null) ? 'admin' : 'student')
   const [applicantSession, setApplicantSession] = useState<{ email: string; name: string } | null>(() => readStoredJson<{ email: string; name: string } | null>('openDoorsApplicantSession', null))
   const [adminSession, setAdminSession] = useState<{ email: string } | null>(() => readStoredJson<{ email: string } | null>('openDoorsAdminSession', null))
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin')
@@ -150,16 +151,14 @@ export function App() {
   const [auditStatusFilter, setAuditStatusFilter] = useState('All statuses')
   const [auditPanel, setAuditPanel] = useState<'profile' | 'submitted' | 'cv' | 'video' | 'rag' | 'verification' | 'decision'>('profile')
   const [auditArtifacts, setAuditArtifacts] = useState<Record<string, any>>({})
+  const [candidateAuditRuns, setCandidateAuditRuns] = useState<Record<string, any>>({})
   const [videoStages, setVideoStages] = useState<Record<string, string>>({})
-  const [videoPlayingByCandidate, setVideoPlayingByCandidate] = useState<Record<string, boolean>>({})
-  const [adminDemoVideoUrl, setAdminDemoVideoUrl] = useState<string | null>(null)
   const [candidateAuditStatus, setCandidateAuditStatus] = useState<Record<string, string>>(() => readStoredJson<Record<string, string>>('openDoorsCandidateStatuses', {}))
   const [candidateDecisions, setCandidateDecisions] = useState<Record<string, { decision: 'FUND' | 'RESERVE' | 'REJECT'; notes: string; score: number; signedOffAt?: string }>>(() => readStoredJson<Record<string, { decision: 'FUND' | 'RESERVE' | 'REJECT'; notes: string; score: number; signedOffAt?: string }>>('openDoorsCandidateDecisions', {}))
   const [auditDecision, setAuditDecision] = useState<'FUND' | 'RESERVE' | 'REJECT'>('FUND')
   const [auditNotes, setAuditNotes] = useState('')
   const [overallOpinion, setOverallOpinion] = useState<Record<string, string>>({})
   const [opinionLoading, setOpinionLoading] = useState<Record<string, boolean>>({})
-  const [, setFactCheckStage] = useState<Record<string, string>>({})
   const [pdfViewMode, setPdfViewMode] = useState<boolean>(false)
 
   // Student Form State
@@ -505,21 +504,56 @@ export function App() {
     }
   }, [])
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('MediaRecorder' in window)) return
-    const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 360
-    const context = canvas.getContext('2d'); const stream = canvas.captureStream(24); const chunks: Blob[] = []
-    const options = MediaRecorder.isTypeSupported('video/webm') ? { mimeType: 'video/webm' } : undefined
-    const recorder = new MediaRecorder(stream, options)
-    let frame = 0
-    const draw = () => { if (!context) return; context.fillStyle = '#0d1f3c'; context.fillRect(0, 0, 640, 360); context.fillStyle = '#d8f4df'; context.font = '700 25px Arial'; context.textAlign = 'center'; context.fillText('Open Doors local demo video', 320, 168); context.font = '16px Arial'; context.fillText('Synthetic candidate evidence · frame ' + frame++, 320, 205) }
-    const timer = window.setInterval(draw, 1000 / 24); draw(); recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data) }; recorder.onstop = () => setAdminDemoVideoUrl(URL.createObjectURL(new Blob(chunks, { type: recorder.mimeType || 'video/webm' }))); recorder.start(); const stop = window.setTimeout(() => recorder.stop(), 1800)
-    return () => { window.clearInterval(timer); window.clearTimeout(stop); stream.getTracks().forEach(track => track.stop()) }
-  }, [])
-
   useEffect(() => { if (adminSession) localStorage.setItem('openDoorsAdminSession', JSON.stringify(adminSession)) }, [adminSession])
   useEffect(() => { localStorage.setItem('openDoorsCandidateStatuses', JSON.stringify(candidateAuditStatus)) }, [candidateAuditStatus])
   useEffect(() => { const decision = decisionForCandidate(selectedProposal || undefined); setAuditDecision(decision?.decision || 'FUND'); setAuditNotes(decision?.notes || ''); setOverrideScore(decision?.score || 4.6) }, [selectedProposal, candidateDecisions])
+  useEffect(() => {
+    const id = selectedProposal?.id
+    if (!id || adminTab !== 'audit') return
+    let cancelled = false
+    let timer: number | undefined
+    const refresh = async () => {
+      try {
+        const response = await fetch(apiUrl(`/api/admin/candidate-audit/${encodeURIComponent(id)}`))
+        if (!response.ok) return
+        const audit = await response.json()
+        if (cancelled) return
+        setCandidateAuditRuns(current => ({ ...current, [id]: audit }))
+        // Rehydrate the visible evidence cards from the server-side audit as each
+        // stage completes. This keeps the video review live while the pipeline runs.
+        const results = audit.results || {}
+        const transcript = results.video_transcription
+        const videoReview = results.video_llm_review
+        if (transcript || videoReview || results.evidence_comparison || results.cv_ocr) {
+          setAuditArtifacts(current => ({
+            ...current,
+            [id]: {
+              ...(current[id] || {}),
+              ...(results.cv_ocr ? { cv: { ...results.cv_ocr, status: 'parsed' } } : {}),
+              ...(transcript || videoReview ? { video: { ...(current[id]?.video || {}), ...(transcript || {}), ...(videoReview || {}), transcriptStatus: transcript?.transcript_status || transcript?.transcriptStatus } } : {}),
+              ...(results.evidence_comparison ? { verification: results.evidence_comparison } : {}),
+            },
+          }))
+        }
+        const stages = audit.stages || {}
+        const ordered = [
+          ['cv_ocr', 'cv'], ['video_transcription', 'video'], ['video_llm_review', 'video'],
+          ['evidence_comparison', 'rag'], ['rag_fact_check', 'rag'],
+          // Keep the chair's decision panel locked until the submitted advisory reviews finish.
+          ['review_technical', 'rag'], ['review_impact', 'rag'],
+          ...((selectedProposal?.budget && Object.keys(selectedProposal.budget).length) ? [['review_budget', 'rag']] : []),
+        ] as const
+        const active = ordered.find(([key]) => stages[key]?.status === 'in_progress')
+        const next = ordered.find(([key]) => !['complete', 'skipped', 'failed'].includes(stages[key]?.status))
+        if (active) setAuditPanel(active[1] as any)
+        else if (next) setAuditPanel(next[1] as any)
+        else if (ordered.every(([key]) => ['complete', 'skipped', 'failed'].includes(stages[key]?.status))) setAuditPanel('decision')
+        if (audit.status === 'queued' || audit.status === 'running') timer = window.setTimeout(refresh, 1200)
+      } catch { /* audit status refresh is best-effort */ }
+    }
+    void refresh()
+    return () => { cancelled = true; if (timer) window.clearTimeout(timer) }
+  }, [selectedProposal?.id, adminTab])
   useEffect(() => {
     if (!applicantSession?.email) return
     const stamp = new Date().toISOString()
@@ -626,6 +660,8 @@ export function App() {
       const data = await res.json()
       if (!data?.id || !data?.applicant_name) throw new Error('Candidate response was incomplete')
       setSelectedProposal(data)
+      // Selecting a dossier only loads it. The committee explicitly starts one
+      // audit cycle with the Run audit button, preventing accidental Groq reruns.
       setSimGpa(data.gpa || 3.85)
       if (data.financials) {
         setSimCostOfAttendance(data.financials.cost_of_attendance || 87000)
@@ -700,11 +736,50 @@ export function App() {
   const openCandidateAudit = async (id: string, panel: 'profile' | 'submitted' | 'cv' | 'video' | 'verification' | 'decision' = 'profile') => { setAuditPanel(panel); await handleSelectProposal(id); setAdminTab('audit') }
 
   const auditCandidate = selectedProposal || proposals[0]
+  const currentAudit = auditCandidate ? candidateAuditRuns[auditCandidate.id] : undefined
+  const auditTokenUsage = currentAudit?.token_usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+  const auditTokenLabel = `${Number(auditTokenUsage.total_tokens || 0).toLocaleString()} tokens · ${Number(auditTokenUsage.prompt_tokens || 0).toLocaleString()} in / ${Number(auditTokenUsage.completion_tokens || 0).toLocaleString()} out`
+  const automaticOpinion = ['review_technical', 'review_impact', 'review_budget']
+    .map(key => currentAudit?.results?.[key]?.summary)
+    .filter(Boolean)
+    .join(' ')
+  const pipelineStageRows = [
+    ['cv_ocr', 'CV parsing'],
+    ['video_transcription', 'Video transcription'],
+    ['video_llm_review', 'Video evaluation'],
+    ['evidence_comparison', 'Evidence comparison'],
+    ['rag_fact_check', 'RAG verification'],
+    ['review_technical', 'Technical review'],
+    ['review_impact', 'Impact review'],
+    ...((auditCandidate?.budget && Object.keys(auditCandidate.budget).length) ? [['review_budget', 'Budget review']] : []),
+  ] as const
   const updateAuditArtifact = (key: string, value: any) => setAuditArtifacts(current => ({ ...current, [key]: { ...value, updatedAt: new Date().toISOString() } }))
   const statusForCandidate = (candidate: Application | undefined) => candidate ? (candidateAuditStatus[candidate.id] || 'Needs review') : 'Needs review'
   const decisionForCandidate = (candidate: Application | undefined) => candidate ? candidateDecisions[candidate.id] : undefined
   const statusClass = (status: string) => ({ 'Needs review': 'status-needs-review', 'In review': 'status-in-review', Verified: 'status-verified', 'Decision needed': 'status-decision-needed', Submitted: 'status-submitted' }[status] || 'status-needs-review')
   const recommendationClass = (decision?: string) => ({ FUND: 'recommendation-fund', RESERVE: 'recommendation-reserve', REJECT: 'recommendation-reject', Pending: 'recommendation-pending' }[decision || 'Pending'] || 'recommendation-pending')
+  const runFullAudit = async () => {
+    if (!auditCandidate) return
+    if (candidateAuditRuns[auditCandidate.id]?.status === 'running') return
+    const id = auditCandidate.id
+    // A rerun is a clean pass: discard the previous visible progress and artifacts
+    // before asking the server to recreate every stage from the beginning.
+    setAuditPanel('profile')
+    setCandidateAuditRuns(current => ({ ...current, [id]: { status: 'queued', stages: {}, results: {}, timeline: [] } }))
+    setAuditArtifacts(current => { const next = { ...current }; delete next[id]; return next })
+    setVideoStages(current => { const next = { ...current }; delete next[id]; return next })
+    setOverallOpinion(current => { const next = { ...current }; delete next[id]; return next })
+    setIsSignedOff(false)
+    await fetch(apiUrl(`/api/admin/candidate-audit/${encodeURIComponent(id)}/run`), { method: 'POST' })
+  }
+  const stopFullAudit = async () => {
+    if (!auditCandidate) return
+    const id = auditCandidate.id
+    await fetch(apiUrl(`/api/admin/candidate-audit/${encodeURIComponent(id)}/stop`), { method: 'POST' })
+    setCandidateAuditRuns(current => ({ ...current, [id]: { status: 'stopped', stages: {}, results: {}, timeline: [] } }))
+    setAuditArtifacts(current => { const next = { ...current }; delete next[id]; return next })
+    setAuditPanel('profile')
+  }
   const persistCandidateDecision = (candidate: Application) => { const decision = { decision: auditDecision, notes: auditNotes, score: overrideScore, signedOffAt: new Date().toISOString() }; setCandidateDecisions(current => { const next = { ...current, [candidate.id]: decision }; localStorage.setItem('openDoorsCandidateDecisions', JSON.stringify(next)); return next }); setCandidateAuditStatus(current => { const next = { ...current, [candidate.id]: 'Submitted' }; localStorage.setItem('openDoorsCandidateStatuses', JSON.stringify(next)); return next }) }
   const runVideoTranscription = async () => {
     if (!auditCandidate) return null
@@ -724,8 +799,20 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
     try { const res = await fetch(apiUrl('/api/admin/evaluate-video'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: auditCandidate, transcript }) }); result = await res.json() } catch { result = { source: 'endpoint-unavailable', evaluation_status: 'Not evaluated', confidence: null, claims: [], flags: ['Evaluation endpoint unavailable; no result was fabricated.'] } }
     updateAuditArtifact(id, { video: { ...(transcript || {}), ...result, status: 'evaluated', confidence: `${Math.round((result.confidence || 0) * 100)}%`, transcriptStatus: transcript?.transcript_status || transcript?.transcriptStatus || 'Extracted' } }); setVideoStages(current => ({ ...current, [id]: 'complete' })); setCandidateAuditStatus(current => ({ ...current, [id]: 'In review' }))
   }
-  const runAuditVerifier = async () => { if (auditCandidate) { const id = auditCandidate.id; let result: any = null; setFactCheckStage(current => ({ ...current, [id]: 'preparing evidence' })); await new Promise(resolve => setTimeout(resolve, 350)); setFactCheckStage(current => ({ ...current, [id]: 'comparing facts' })); try { const res = await fetch(apiUrl('/api/admin/cross-verify-evidence'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: { ...auditCandidate, cv_parsed: auditArtifacts[id]?.cv?.parsed || {}, video_transcript: auditArtifacts[id]?.video?.transcript || '' } }) }); if (!res.ok) throw new Error(`HTTP ${res.status}`); result = await res.json(); setFactCheckStage(current => ({ ...current, [id]: 'complete' })) } catch (error: any) { result = { status: 'failed', model_opinion: `Fact checker failed: ${error.message}. No conclusion was fabricated.`, checks: [], final_decision: 'human_required' }; setFactCheckStage(current => ({ ...current, [id]: 'error' })) } updateAuditArtifact(id, { verification: { ...result, institution: auditCandidate.school, party: auditCandidate.applicant_name, checkedAt: result.checked_at } }); setCandidateAuditStatus(current => ({ ...current, [id]: 'In review' })) } }
-  const runRagSearch = async () => { setRagLoading(true); try { const res = await fetch(apiUrl('/api/rag/retrieve'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: ragQuery }) }); const data = await res.json(); setRagResults(data.results || []) } finally { setRagLoading(false) } }
+  const runRagSearch = async () => {
+    setRagLoading(true)
+    try {
+      const response = await fetch(apiUrl('/api/rag/retrieve'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: ragQuery }) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.detail || 'RAG retrieval failed.')
+      setRagResults(data.results || [])
+    } catch (error) {
+      console.error(error)
+      setRagResults([])
+    } finally {
+      setRagLoading(false)
+    }
+  }
   const streamOverallOpinion = async () => { if (!auditCandidate) return; const id = auditCandidate.id; setOpinionLoading(current => ({ ...current, [id]: true })); try { const res = await fetch(apiUrl('/api/admin/overall-opinion'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: { ...auditCandidate, verification: auditArtifacts[id]?.verification || {} }, transcript: auditArtifacts[id]?.video || {} }) }); const data = await res.json(); const text = data.opinion || 'No opinion returned; human review remains required.'; setOverallOpinion(current => ({ ...current, [id]: '' })); for (let i = 0; i < text.length; i += 5) { await new Promise(resolve => setTimeout(resolve, 18)); setOverallOpinion(current => ({ ...current, [id]: text.slice(0, i + 5) })) } } catch { setOverallOpinion(current => ({ ...current, [id]: 'AI opinion unavailable. Human review remains required.' })) } finally { setOpinionLoading(current => ({ ...current, [id]: false })) } }
 
   // Parse Deposited CV in the Student Portal
@@ -2517,7 +2604,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
           <div style={{ padding: '24px 32px' }}>
             {adminTab === 'overview' && <AlluvialLegend />}
             {adminTab === 'overview' && <><DemoOperationsCard health={integrationHealth} batch={batchAudit} onHealth={runIntegrationHealth} onBatch={runBatchDemoAudit} /><BatchResults results={batchAudit.results} /></>}
-            {adminTab === 'overview' && <div className="admin-overview"><div className="overview-intro"><div><span className="eyebrow">Committee overview · Application 2026</span><h2>Good morning, committee.</h2><p>Keep the review room moving with a clear view of workload and evidence.</p></div><button className="m3-btn m3-btn-primary" onClick={() => setAdminTab('audit')}>Continue audit <span className="material-symbols-outlined">arrow_forward</span></button></div><div className="overview-metrics">{['Total applicants','Needs review','In review','Verified','Decision needed','Submitted'].map(label => <div className={`overview-metric ${label === 'Total applicants' ? 'overview-total' : ''}`} key={label}><span>{label}</span><strong>{label === 'Total applicants' ? proposals.length : proposals.filter(p => statusForCandidate(p) === label).length}</strong></div>)}</div><div className="overview-lower"><section className="overview-distribution dossier-panel"><div className="audit-section-head"><div><span className="eyebrow">Evidence flow</span><h3>Status to recommendation</h3></div><span className="audit-count">{proposals.length} applicants</span></div><div className="alluvial-wrap"><svg className="alluvial-svg" viewBox="0 0 760 280" role="img" aria-label="Candidate audit statuses flowing into chair recommendations">{['Needs review','In review','Verified','Decision needed','Submitted'].map((status, index) => <g key={status}><rect x="12" y={20 + index * 48} width="138" height="28" className={`alluvial-node ${statusClass(status)}`} /><text x="22" y={38 + index * 48} className="alluvial-label">{status}</text><text x="142" y={38 + index * 48} textAnchor="end" className="alluvial-count">{proposals.filter(p => statusForCandidate(p) === status).length}</text></g>)}{['FUND','RESERVE','REJECT','Pending'].map((recommendation, index) => <g key={recommendation}><rect x="610" y={40 + index * 56} width="138" height="28" className={`alluvial-node ${recommendationClass(recommendation)}`} /><text x="620" y={58 + index * 56} className="alluvial-label">{recommendation}</text><text x="738" y={58 + index * 56} textAnchor="end" className="alluvial-count">{proposals.filter(p => (decisionForCandidate(p)?.decision || 'Pending') === recommendation).length}</text></g>)}{['Needs review','In review','Verified','Decision needed','Submitted'].flatMap((status, si) => ['FUND','RESERVE','REJECT','Pending'].map((recommendation, ri) => { const count = proposals.filter(p => statusForCandidate(p) === status && (decisionForCandidate(p)?.decision || 'Pending') === recommendation).length; if (!count) return null; const y1 = 34 + si * 48; const y2 = 54 + ri * 56; return <path key={`${status}-${recommendation}`} d={`M 150 ${y1} C 330 ${y1}, 430 ${y2}, 610 ${y2}`} className={`alluvial-flow ${recommendationClass(recommendation)}`} style={{ strokeWidth: Math.max(3, count * 8) }} /> }))}</svg></div></section><section className="overview-recent dossier-panel"><span className="eyebrow">Recent updates</span><h3>Candidate activity</h3>{proposals.slice(0, 5).map(p => <button type="button" key={p.id} onClick={() => openCandidateAudit(p.id)}><span className="candidate-avatar">{(p.applicant_name || p.id).slice(0, 2).toUpperCase()}</span><span><strong>{p.applicant_name || p.id}</strong><small>{p.id} · {statusForCandidate(p)}</small></span><span className="material-symbols-outlined">arrow_forward</span></button>)}</section></div></div>}
+            {adminTab === 'overview' && <div className="admin-overview"><div className="overview-intro"><div><span className="eyebrow">Committee overview · Application 2026</span><h2>Good morning, committee.</h2><p>Keep the review room moving with a clear view of workload and evidence.</p></div><button className="m3-btn m3-btn-primary" onClick={() => { setAuditPanel('profile'); setAdminTab('audit') }}>Continue audit <span className="material-symbols-outlined">arrow_forward</span></button></div><div className="overview-metrics">{['Total applicants','Needs review','In review','Verified','Decision needed','Submitted'].map(label => <div className={`overview-metric ${label === 'Total applicants' ? 'overview-total' : ''}`} key={label}><span>{label}</span><strong>{label === 'Total applicants' ? proposals.length : proposals.filter(p => statusForCandidate(p) === label).length}</strong></div>)}</div><div className="overview-lower"><section className="overview-distribution dossier-panel"><div className="audit-section-head"><div><span className="eyebrow">Evidence flow</span><h3>Status to recommendation</h3></div><span className="audit-count">{proposals.length} applicants</span></div><div className="alluvial-wrap"><svg className="alluvial-svg" viewBox="0 0 760 280" role="img" aria-label="Candidate audit statuses flowing into chair recommendations">{['Needs review','In review','Verified','Decision needed','Submitted'].map((status, index) => <g key={status}><rect x="12" y={20 + index * 48} width="138" height="28" className={`alluvial-node ${statusClass(status)}`} /><text x="22" y={38 + index * 48} className="alluvial-label">{status}</text><text x="142" y={38 + index * 48} textAnchor="end" className="alluvial-count">{proposals.filter(p => statusForCandidate(p) === status).length}</text></g>)}{['FUND','RESERVE','REJECT','Pending'].map((recommendation, index) => <g key={recommendation}><rect x="610" y={40 + index * 56} width="138" height="28" className={`alluvial-node ${recommendationClass(recommendation)}`} /><text x="620" y={58 + index * 56} className="alluvial-label">{recommendation}</text><text x="738" y={58 + index * 56} textAnchor="end" className="alluvial-count">{proposals.filter(p => (decisionForCandidate(p)?.decision || 'Pending') === recommendation).length}</text></g>)}{['Needs review','In review','Verified','Decision needed','Submitted'].flatMap((status, si) => ['FUND','RESERVE','REJECT','Pending'].map((recommendation, ri) => { const count = proposals.filter(p => statusForCandidate(p) === status && (decisionForCandidate(p)?.decision || 'Pending') === recommendation).length; if (!count) return null; const y1 = 34 + si * 48; const y2 = 54 + ri * 56; return <path key={`${status}-${recommendation}`} d={`M 150 ${y1} C 330 ${y1}, 430 ${y2}, 610 ${y2}`} className={`alluvial-flow ${recommendationClass(recommendation)}`} style={{ strokeWidth: Math.max(3, count * 8) }} /> }))}</svg></div></section><section className="overview-recent dossier-panel"><span className="eyebrow">Recent updates</span><h3>Candidate activity</h3>{proposals.slice(0, 5).map(p => <button type="button" key={p.id} onClick={() => openCandidateAudit(p.id)}><span className="candidate-avatar">{(p.applicant_name || p.id).slice(0, 2).toUpperCase()}</span><span><strong>{p.applicant_name || p.id}</strong><small>{p.id} · {statusForCandidate(p)}</small></span><span className="material-symbols-outlined">arrow_forward</span></button>)}</section></div></div>}
             {adminTab === 'decisions' && <div className="admin-decisions dossier-panel"><div className="overview-intro"><div><span className="eyebrow">Committee decisions · Application 2026</span><h2>Decision register</h2><p>Candidate-keyed recommendations and chair sign-offs.</p></div><button className="m3-btn m3-btn-primary" onClick={() => setAdminTab('audit')}>Open audit workspace</button></div><div className="decisions-table-wrap"><table className="decisions-table"><thead><tr><th>Candidate</th><th>Track / GPA</th><th>Audit status</th><th>Recommendation</th><th>Score</th><th>Sign-off</th><th>Requested grant</th><th></th></tr></thead><tbody>{proposals.map(p => { const decision = decisionForCandidate(p); const recommendation = decision?.decision || 'Pending'; return <tr key={p.id}><td><strong>{p.applicant_name || p.id}</strong><small>{p.id}</small></td><td>{p.major}<br /><small>GPA {p.gpa?.toFixed(2) || '—'}</small></td><td><span className={`audit-status ${statusClass(statusForCandidate(p))}`}>{statusForCandidate(p)}</span></td><td><span className={`recommendation-chip ${recommendationClass(recommendation)}`}>{recommendation}</span></td><td>{decision?.score ? `${decision.score.toFixed(1)} / 5.0` : '—'}</td><td>{decision?.signedOffAt ? new Date(decision.signedOffAt).toLocaleString() : 'Not signed off'}</td><td>${p.requested_grant?.toLocaleString() || '—'}</td><td><button className="text-button" onClick={() => openCandidateAudit(p.id, 'decision')}>Open <span className="material-symbols-outlined">arrow_forward</span></button></td></tr> })}</tbody></table>{!proposals.length && <div className="audit-empty"><span className="material-symbols-outlined">gavel</span><strong>No decisions yet</strong><small>Candidate decisions will appear here after chair sign-off.</small></div>}</div></div>}
             {adminTab === 'audit' && <div className="audit-workspace">
               <section className="audit-queue dossier-panel">
@@ -2544,12 +2631,11 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 </div>
               </section>
               <section className="audit-detail dossier-panel">
-                <div className="audit-candidate-head"><div><span className="eyebrow">02 · Selected dossier</span><h2>{auditCandidate?.applicant_name || 'Select a candidate'}</h2><p>{auditCandidate ? `${auditCandidate.id} · ${auditCandidate.major || 'Applicant track'} · ${auditCandidate.school || 'Institution pending'} · GPA ${auditCandidate.gpa?.toFixed(2) || '—'}` : 'Choose a candidate from the queue to begin an evidence audit.'}</p>{auditCandidate && <div className="audit-header-meta"><span>{statusForCandidate(auditCandidate)}</span><span>Updated {auditCandidate.ground_truth?.updated_at || 'today'}</span><span>${auditCandidate.requested_grant?.toLocaleString() || '—'} requested</span></div>}</div><div className="audit-head-actions"><span className="mint-pill">{auditCandidate ? 'Context linked' : 'Awaiting candidate'}</span>{auditCandidate && <button className="m3-btn m3-btn-primary" onClick={() => setAuditPanel('decision')}>Open decision</button>}</div></div>
-                {auditCandidate && <><div className="audit-tabs">{[['profile','Profile & education'],['submitted','Submitted application'],['cv','CV PDF parser'],['video','Video evaluation'],['rag','RAG rule verification'],['verification','Contract / institution'],['decision','Decision']].map(([key, label]) => <button type="button" className={auditPanel === key ? 'active' : ''} key={key} onClick={() => setAuditPanel(key as any)}>{label}</button>)}</div><div className="audit-evidence">{auditPanel === 'submitted' && <SubmittedApplicationPanel candidate={auditCandidate} status={statusForCandidate(auditCandidate)} statusClass={statusClass} />}
+                <div className="audit-candidate-head"><div><span className="eyebrow">02 · Selected dossier</span><h2>{auditCandidate?.applicant_name || 'Select a candidate'}</h2><p>{auditCandidate ? `${auditCandidate.id} · ${auditCandidate.major || 'Applicant track'} · ${auditCandidate.school || 'Institution pending'} · GPA ${auditCandidate.gpa?.toFixed(2) || '—'}` : 'Choose a candidate from the queue to begin an evidence audit.'}</p>{auditCandidate && <div className="audit-header-meta"><span>{statusForCandidate(auditCandidate)}</span><span>Updated {auditCandidate.ground_truth?.updated_at || 'today'}</span><span>${auditCandidate.requested_grant?.toLocaleString() || '—'} requested</span></div>}</div><div className="audit-head-actions"><span className="mint-pill">{auditCandidate ? 'Context linked' : 'Awaiting candidate'}</span>{auditCandidate && (candidateAuditRuns[auditCandidate.id]?.status === 'complete' || candidateAuditRuns[auditCandidate.id]?.status === 'completed_with_errors') && <button className="m3-btn m3-btn-primary" onClick={() => setAuditPanel('decision')}>Open decision</button>}</div></div>
+                {auditCandidate && <><div className="audit-action-bar"><div className="audit-pipeline-head"><span><strong>Automatic audit pipeline · {currentAudit?.status === 'running' ? 'Running' : currentAudit?.status === 'complete' || currentAudit?.status === 'completed_with_errors' ? 'Complete' : 'Ready'}</strong><small>One click starts every stage in order. Live results appear as each stage finishes. Usage: {auditTokenLabel}</small></span><div className="audit-pipeline-steps" aria-label="Audit stage progress">{pipelineStageRows.map(([key, label]) => { const stage = currentAudit?.stages?.[key] || {}; const state = stage.status || 'queued'; return <span key={key} className={`audit-pipeline-step ${state}`}><i>{state === 'complete' ? '✓' : state === 'failed' ? '!' : state === 'in_progress' ? '…' : '·'}</i>{label}</span> })}</div></div><div className="audit-action-buttons"><button type="button" className="m3-btn m3-btn-primary" onClick={() => void runFullAudit()} disabled={currentAudit?.status === 'running'}><span className="material-symbols-outlined">play_arrow</span>{currentAudit?.status === 'running' ? 'Audit running…' : currentAudit?.status === 'complete' || currentAudit?.status === 'completed_with_errors' ? 'Rerun audit' : 'Run audit'}</button>{currentAudit?.status === 'running' && <button type="button" className="m3-btn m3-btn-outlined" onClick={() => void stopFullAudit()}>Stop audit</button>}</div></div><div className="audit-tabs">{[['profile','Profile & education'],['submitted','Submitted application'],['cv','CV PDF parser'],['video','Video evaluation'],['rag','RAG rule verification'],['decision','Decision']].map(([key, label]) => <button type="button" className={auditPanel === key ? 'active' : ''} key={key} onClick={() => setAuditPanel(key as any)}>{label}</button>)}</div><div className="audit-evidence">{auditPanel === 'submitted' && <SubmittedApplicationPanel candidate={auditCandidate} status={statusForCandidate(auditCandidate)} statusClass={statusClass} />}
                   {auditPanel === 'profile' && <div className="evidence-grid"><article className="evidence-card"><span className="eyebrow">Candidate context</span><h3>Profile & education</h3><dl><dt>Applicant</dt><dd>{auditCandidate.applicant_name}</dd><dt>Institution</dt><dd>{auditCandidate.school || 'Yale College / Morse College'}</dd><dt>Track</dt><dd>{auditCandidate.major}</dd><dt>GPA</dt><dd>{auditCandidate.gpa?.toFixed(2)} / 4.00</dd><dt>Requested grant</dt><dd>${auditCandidate.requested_grant?.toLocaleString()}</dd></dl></article><article className="evidence-card attention-card"><span className="eyebrow">Audit posture</span><h3>Evidence status</h3><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>Application identity linked</span></div><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>CV source available</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Video evaluation pending</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Institution verification pending</span></div></article></div>}
                   {auditPanel === 'cv' && <CvVisionPanel key={auditCandidate.id} proposalId={auditCandidate.id} applicantName={auditCandidate.applicant_name} pdfUrl={artifactUrl(auditCandidate.pdf_url || `/api/proposals/${auditCandidate.id}/pdf`)} apiUrl={apiUrl} onResult={(id, result) => updateAuditArtifact(id, { cv: { status: 'parsed', source: result.document_source, parsed: result.structured, extracted: `${result.stats.box_count} OCR fields detected`, flags: [] } })} />}
-                  {auditPanel === 'video' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">Automated evidence artifact</span><h3>Video evaluation</h3><p>Video replaces the motivation letter · Candidate: {auditCandidate.applicant_name}</p></div><div><button className="m3-btn m3-btn-outlined" onClick={runVideoTranscription}>Run transcription</button><button className="m3-btn m3-btn-primary" onClick={runVideoEvaluation}>Evaluate video</button></div></div><div className="video-audit-preview"><video className="audit-video" controls preload="metadata" src={auditCandidate.video_url || recordedVideoUrl || adminDemoVideoUrl || undefined} onPlay={() => setVideoPlayingByCandidate(current => ({ ...current, [auditCandidate.id]: true }))} onPause={() => setVideoPlayingByCandidate(current => ({ ...current, [auditCandidate.id]: false }))}><track kind="captions" /><span>Video preview unavailable.</span></video><div><strong>{videoPlayingByCandidate[auditCandidate.id] ? 'Playing candidate video' : 'Candidate video ready'}</strong><small>Duration: {auditArtifacts[auditCandidate.id]?.video?.duration || '—'} · Transcript: {auditArtifacts[auditCandidate.id]?.video?.transcriptStatus || 'Not extracted'}</small></div><span className="confidence-chip">Confidence {auditArtifacts[auditCandidate.id]?.video?.confidence || '—'}</span></div><div className="parser-steps">{['queued','extracting transcript','evaluating','complete'].map(stage => <span className={(videoStages[auditCandidate.id] || 'idle') === stage ? 'active' : (videoStages[auditCandidate.id] || 'idle') === 'complete' ? 'done' : ''} key={stage}>{stage}</span>)}</div><div className="transcript-panel"><span className="artifact-label">Extracted transcript</span><p>{auditArtifacts[auditCandidate.id]?.video?.transcript || 'Run transcription to display the real transcript returned by Groq.'}</p></div><div className="claim-list"><span className="artifact-label">Model/rubric opinion · final decision remains human</span>{(auditArtifacts[auditCandidate.id]?.video?.claims || ['No opinion generated until a real transcript is available.']).map((claim: string) => <div key={claim}><span className="material-symbols-outlined">check</span>{claim}</div>)}</div></article>}
-                  {auditPanel === 'rag' && <article className="evidence-card full-evidence candidate-rag-panel">
+                  {auditPanel === 'video' && <VideoPanel key={auditCandidate.id} candidateId={auditCandidate.id} applicantName={auditCandidate.applicant_name} videoUrl={auditCandidate.video_url} videoFilename={auditCandidate.video_filename} transcript={auditArtifacts[auditCandidate.id]?.video || null} review={auditArtifacts[auditCandidate.id]?.video || null} stageStatuses={currentAudit?.stages || {}} busy={videoStages[auditCandidate.id] === 'running'} onRunTranscription={runVideoTranscription} onRunEvaluation={runVideoEvaluation} />}{auditPanel === 'rag' && <article className="evidence-card full-evidence candidate-rag-panel">
                     <div className="evidence-title">
                       <div>
                         <span className="eyebrow">Automated RAG Fact Checker</span>
@@ -2561,6 +2647,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                         {ragLoading ? 'Fact-checking against RAG...' : 'Re-run RAG Fact Check'}
                       </button>
                     </div>
+                    <div className="rag-state-legend"><span className="state-chip match">Match</span><span className="state-chip contradiction">Contradiction</span><span className="state-chip review">Review</span><span className="state-chip missing">Missing</span></div>
 
                     {/* Quick Automated Compliance Summary */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, margin: '18px 0' }}>
@@ -2677,8 +2764,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                     </div>
                   </article>}
 
-                  {auditPanel === 'verification' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">Contract / institution verification</span><h3>Three-source fact checker</h3><p>Compare submitted form fields against parsed CV information and the extracted video transcript.</p></div><button className="m3-btn m3-btn-primary" onClick={runAuditVerifier}>Run fact checker</button></div><div className="verified-banner"><span className="material-symbols-outlined">{auditArtifacts[auditCandidate.id]?.verification ? 'fact_check' : 'pending'}</span>{auditArtifacts[auditCandidate.id]?.verification?.model_opinion || 'Run the fact checker to compare all evidence sources.'}</div><div className="fact-check-table"><div className="fact-check-head"><span>Fact</span><span>Form</span><span>CV</span><span>Video</span><span>State</span></div>{(auditArtifacts[auditCandidate.id]?.verification?.checks || []).map((row: any) => <div className="fact-check-row" key={row.fact}><strong>{row.fact}</strong><span>{row.form}</span><span>{row.cv}</span><span>{row.video}</span><b className={`state-chip ${row.state}`}>{row.state}</b></div>)}</div><div className="human-decision-note"><strong>Human final decision required</strong><span>The model may summarize contradictions and recommend review, but it cannot approve or reject the candidate.</span></div></article>}
-                  {auditPanel === 'decision' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">03 · Human chair decision</span><h3>Decision panel</h3><p>Keep {auditCandidate.applicant_name} in context while recording the final recommendation.</p></div><span className="mint-pill">{auditCandidate.id}</span></div><div className="decision-summary"><div><span className="artifact-label">Checks passed</span><strong>{Object.keys(auditArtifacts[auditCandidate.id] || {}).length} / 3 evidence runs</strong></div><div><span className="artifact-label">Recommendation</span><select value={auditDecision} onChange={e => setAuditDecision(e.target.value as any)}><option>FUND</option><option>RESERVE</option><option>REJECT</option></select></div><div><span className="artifact-label">Score</span><strong>{overrideScore.toFixed(1)} / 5.0</strong></div></div><div className="ai-opinion-panel"><div><span className="artifact-label">AI overall opinion · streamed advisory</span><p>{overallOpinion[auditCandidate.id] || 'Generate a streamed, evidence-grounded AI opinion. It can flag contradictions or missing evidence, but the human chair decides.'}</p></div><button type="button" className="m3-btn m3-btn-outlined" onClick={streamOverallOpinion} disabled={opinionLoading[auditCandidate.id]}>{opinionLoading[auditCandidate.id] ? 'Streaming…' : 'Stream AI opinion'}</button></div><label className="audit-notes"><span>Reviewer notes</span><textarea rows={4} value={auditNotes} onChange={e => setAuditNotes(e.target.value)} placeholder="Record the evidence behind your recommendation." /></label>{decisionForCandidate(auditCandidate)?.signedOffAt && <div className="verified-banner"><span className="material-symbols-outlined">verified</span>Signed off for {auditCandidate.applicant_name} at {new Date(decisionForCandidate(auditCandidate)!.signedOffAt!).toLocaleString()}</div>}<button className="m3-btn m3-btn-primary" onClick={() => { persistCandidateDecision(auditCandidate); setIsSignedOff(true) }}>{decisionForCandidate(auditCandidate)?.signedOffAt ? 'Update chair decision' : 'Authorize decision'}</button></article>}
+                  {auditPanel === 'decision' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">03 · Human chair decision</span><h3>Decision panel</h3><p>All automated evidence and advisory reviews are summarized here before the chair signs.</p></div><span className="mint-pill">{auditCandidate.id}</span></div><div className="decision-summary"><div><span className="artifact-label">Advisory reviews</span><strong>{Object.keys(currentAudit?.results || {}).filter(key => key.startsWith('review_')).length} / {(auditCandidate.budget && Object.keys(auditCandidate.budget).length) ? 3 : 2} complete</strong></div><div><span className="artifact-label">Recommendation</span><select value={auditDecision} onChange={e => setAuditDecision(e.target.value as any)}><option>FUND</option><option>RESERVE</option><option>REJECT</option></select></div><div><span className="artifact-label">Score</span><strong>{overrideScore.toFixed(1)} / 5.0</strong></div></div><div className="audit-review-feed"><div className="audit-review-feed-head"><span className="artifact-label">Automated review output</span><small>Advisory only · human chair decides</small></div>{[['review_technical','Technical'],['review_impact','Impact'], ...((auditCandidate.budget && Object.keys(auditCandidate.budget).length) ? [['review_budget','Budget']] : [])].map(([key,label]) => { const item = currentAudit?.results?.[key]; const stage = currentAudit?.stages?.[key]?.status || 'queued'; return <section className={`audit-review-item ${stage}`} key={key}><div><strong>{label}</strong><span>{stage === 'complete' ? 'Complete' : stage === 'in_progress' ? 'Running…' : stage === 'failed' ? 'Failed' : 'Queued'}</span></div><p>{item?.summary || currentAudit?.stages?.[key]?.error || 'Waiting for this review to run.'}</p></section> })}</div><div className="ai-opinion-panel"><div><span className="artifact-label">AI overall opinion · streamed advisory</span><p>{overallOpinion[auditCandidate.id] || automaticOpinion || 'Waiting for the automated reviews to produce an evidence-grounded summary.'}</p></div><button type="button" className="m3-btn m3-btn-outlined" onClick={streamOverallOpinion} disabled={opinionLoading[auditCandidate.id]}>{opinionLoading[auditCandidate.id] ? 'Streaming…' : 'Stream AI opinion'}</button></div><label className="audit-notes"><span>Reviewer notes</span><textarea rows={4} value={auditNotes} onChange={e => setAuditNotes(e.target.value)} placeholder="Record the evidence behind your recommendation." /></label>{decisionForCandidate(auditCandidate)?.signedOffAt && <div className="verified-banner"><span className="material-symbols-outlined">verified</span>Signed off for {auditCandidate.applicant_name} at {new Date(decisionForCandidate(auditCandidate)!.signedOffAt!).toLocaleString()}</div>}<button className="m3-btn m3-btn-primary" onClick={() => { persistCandidateDecision(auditCandidate); setIsSignedOff(true) }}>{decisionForCandidate(auditCandidate)?.signedOffAt ? 'Update chair decision' : 'Authorize decision'}</button></article>}
                 </div></>}
               </section>
             </div>}
@@ -3447,3 +3533,9 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
 }
 
 export default App
+
+
+
+
+
+

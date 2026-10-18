@@ -6,7 +6,6 @@ and synthetic applicants (YALE-01 to YALE-05).
 
 import os
 import sys
-import json
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 src_dir = os.path.join(base_dir, "src")
@@ -20,22 +19,37 @@ from engine.traceability_verifier import verify_traceability
 from multimodal.figure_verifier import verify_figure_text_consistency
 
 def test_full_pipeline():
-    proposals_dir = os.path.join(base_dir, "data", "synthetic_proposals")
-
     print("=" * 65)
     print("RUNNING YALE FELLOWSHIP REVIEW PIPELINE E2E TEST")
     print("=" * 65)
 
-    with open(os.path.join(proposals_dir, "YALE-01-EXCELLENT.json"), "r") as f:
-        y1_clean = json.load(f)
-    with open(os.path.join(proposals_dir, "YALE-02-BUDGET-FLAW.json"), "r") as f:
-        y2_budget_flaw = json.load(f)
-    with open(os.path.join(proposals_dir, "YALE-03-TRANSCRIPT-CONTRADICTION.json"), "r") as f:
-        y3_transcript = json.load(f)
-    with open(os.path.join(proposals_dir, "YALE-04-PROMPT-INJECTION.json"), "r") as f:
-        y4_injection = json.load(f)
-    with open(os.path.join(proposals_dir, "YALE-05-SAP-DEFECT.json"), "r") as f:
-        y5_sap = json.load(f)
+    def proposal(gpa=3.96, computer_allowance=1800):
+        return {
+            "id": "TEST-CANDIDATE",
+            "applicant_name": "Test Candidate",
+            "gpa": gpa,
+            "page_count": 8,
+            "requested_grant": 78500,
+            "financials": {
+                "cost_of_attendance": 87000,
+                "parent_share": 0,
+                "student_share": 3700,
+                "outside_scholarships": 0,
+                "computer_allowance": computer_allowance,
+            },
+            "budget": {"requested_grant": 78500},
+            "sections": {
+                "abstract": "My research explores equitable resource delivery. Cumulative GPA: 3.96.",
+                "scientific_methodology": "Formal verification and field validation.",
+                "impact_and_dissemination": "Coordinated community deployments.",
+                "budget": "Parent share and standard student employment are accounted for.",
+            },
+        }
+
+    y1_clean = proposal()
+    y2_budget_flaw = proposal(computer_allowance=4200)
+    y3_transcript = proposal(gpa=3.95)
+    y5_sap = proposal(gpa=2.95)
 
     # STAGE 1: Multimodal Transcript & Speech Consistency
     print("\n[Stage 1: Multimodal Verification]")
@@ -61,7 +75,7 @@ def test_full_pipeline():
     # STAGE 3: Multi-Agent Evaluation & Round 1 Reviews
     print("\n[Stage 3: Multi-Agent Parallel Evaluators]")
     reviews_clean = {
-        "academic": {"score": 4.8, "recommendation": "FUND", "citations": [{"quote": "graduating summa cum laude with a 3.96 cumulative GPA"}]},
+        "academic": {"score": 4.8, "recommendation": "FUND", "citations": [{"quote": "equitable resource delivery"}]},
         "impact": {"score": 4.7, "recommendation": "FUND", "citations": [{"quote": "Yale Undergrad Community Robotics"}]},
         "budget": {"score": 4.6, "recommendation": "FUND", "citations": [{"quote": "Parent share ($4,800) and standard student employment self-help ($3,700) are fully accounted for"}]}
     }

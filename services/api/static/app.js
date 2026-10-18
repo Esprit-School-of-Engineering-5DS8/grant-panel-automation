@@ -111,8 +111,8 @@ function renderProposals(proposals) {
 
   proposalsContainer.innerHTML = proposals.map(p => {
     const isSelected = selectedProposal && selectedProposal.id === p.id;
-    const grantFormatted = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(p.requested_grant);
-    const partnersCount = p.consortium_partners ? p.consortium_partners.length : 0;
+    const grantFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(p.requested_grant);
+    const schoolLabel = p.school || 'Yale College';
 
     return `
       <div class="proposal-card-item ${isSelected ? 'selected' : ''}" data-id="${p.id}" onclick="selectProposal('${p.id}')">
@@ -121,8 +121,8 @@ function renderProposals(proposals) {
           <div class="item-title">${p.title}</div>
           <div class="item-meta">
             <span>👤 ${p.pi_name}</span>
-            <span>🏛️ ${partnersCount} Partners</span>
-            <span>💶 ${grantFormatted}</span>
+            <span>🏛️ ${schoolLabel}</span>
+            <span>💵 ${grantFormatted}</span>
             <span>📄 ${p.page_count}p</span>
           </div>
         </div>
@@ -245,23 +245,21 @@ async function runDirectPipeline() {
     await sleep(250);
     setPipelineStage(1, 'completed');
 
-    // Stage 2: Deterministic Checks
+    // Stage 2: LLM RAG fact-check (advisory only)
     setPipelineStage(2, 'active');
-    log(`[Stage 2] Running deterministic compliance checks (page limits, consortium >= 3, caps)...`);
-    const s2Res = await fetch('/api/stage2/deterministic-checks', {
+    log(`[Stage 2] Retrieving corpus evidence and asking the LLM to assess declared claims...`);
+    const s2Res = await fetch('/api/stage2/rag-fact-check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(selectedProposal)
     });
+    if (!s2Res.ok) throw new Error(`Stage 2 fact-check failed (HTTP ${s2Res.status}).`);
     const s2 = await s2Res.json();
-
-    if (!s2.is_eligible) {
-      log(`[Stage 2 Violation] Proposal is deterministic REJECTED! Violations: ${s2.violations.join(', ')}`);
-      setPipelineStage(2, 'completed');
-      renderRejectedState(s2.violations);
-      return;
+    const checkCount = Array.isArray(s2.checks) ? s2.checks.length : 0;
+    log(`[Stage 2] LLM returned ${checkCount} claim assessments. No automated eligibility or award decision was made.`);
+    for (const check of s2.checks || []) {
+      log(`[Stage 2 · ${check.state}] ${check.claim}${check.citation?.document ? ` — ${check.citation.document}` : ' — no verified citation'}`);
     }
-    log(`[Stage 2 Passed] Proposal complies with all hard eligibility rules.`);
     setPipelineStage(2, 'completed');
 
     // Stage 3: Parallel Independent Evaluators
@@ -387,7 +385,7 @@ function renderRejectedState(violations) {
   compositeScoreVal.textContent = '0.00 / 5.0';
   cohortTierVal.textContent = 'REJECTED (INELIGIBLE)';
   cohortTierVal.className = 'meta-val text-red';
-  esrLetterBody.textContent = `Formal Administrative Ineligibility Notice: Proposal fails Horizon-AI criteria due to: ${violations.join('; ')}.`;
+  esrLetterBody.textContent = `Formal Administrative Ineligibility Notice: Application fails Yale fellowship criteria due to: ${violations.join('; ')}.`;
   chairStatusPill.textContent = 'Rejected Administratively';
   chairStatusPill.className = 'status-pill icon-red';
 }
