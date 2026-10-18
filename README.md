@@ -94,3 +94,44 @@ python src/rag/evaluator.py
 2. Go to **Workflows** -> **Import from File**.
 3. Select `workflows/grant_panel_simulator_n8n.json`.
 4. Test with any generated proposal from `data/synthetic_proposals/PROP-01-EXCELLENT.json`.
+
+## Applicant intake and committee review
+
+The web applicant portal uses server-backed accounts and drafts. It does not provide demo sign-in credentials. Committee access uses the credentials in the repository-root `.env` file.
+
+### Install and run the web application
+
+From the repository root:
+
+```powershell
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+# Edit .env and set a private, randomly generated GRANT_PANEL_ADMIN_PASSWORD.
+python -m uvicorn services.api.main:app --host 127.0.0.1 --port 8001
+```
+
+The API loads `.env` at startup. Keep that file private; it is excluded from Git.
+
+Use a second terminal:
+
+```powershell
+Set-Location frontend
+npm install
+npm run dev
+```
+
+Open the Vite URL shown in the terminal (the configured port is `3000`). Create an applicant account in the browser; passwords must contain at least 10 characters. Configure the committee email and password in the backend process environment before signing in to the committee portal. Do not commit production credentials.
+
+Applicant accounts, sessions, and drafts are stored in `data/grant_panel.sqlite3` by default; uploaded files are stored under `data/student_uploads`. Set `GRANT_PANEL_DATABASE_PATH` before starting the API to use a different SQLite file.
+
+### CV and optional video handling
+
+- CVs must be PDF files up to 10 MB and 30 pages. Selectable PDF text is extracted directly; image-only pages are rendered and processed with RapidOCR. The applicant sees an inline PDF preview and the extracted text. OCR errors are reported rather than replaced with sample data.
+- An MP4, WebM, or MOV video up to 50 MB may be uploaded, but it is optional and is not recorded through the webcam.
+- A submitted application must include a CV owned by the signed-in account. The optional video is attached only if the applicant uploads one.
+
+### Committee review and final decision
+
+Select a candidate in the committee audit workspace and run the **technical**, **impact**, and **budget** reviews. Each result, evidence summary, citations, and completion time is persisted and shown for that candidate. Re-running a review clears its saved final decision. FUND, RESERVE, or REJECT remains unavailable until all three runs have completed; the API enforces the same rule.
+
+These three reviewer runs currently use deterministic evidence rules; they are not separate LLM agents. The final decision and notes are stored in SQLite and appear in the decision register and the applicant's status view. An applicant can refresh their status to see a newly recorded committee decision.

@@ -881,3 +881,17 @@ button, input, select, textarea {
 .human-decision-note { display:flex; flex-direction:column; gap:5px; margin-top:18px; padding:14px 16px; border-left:4px solid var(--cobalt); background:#f1f5ff; color:#304766; font-size:.72rem; line-height:1.45; }.human-decision-note strong { color:var(--cobalt); font-size:.75rem; }
 .fact-check-table:has(.fact-check-head:only-child) { display:none; }
 @media(max-width:800px){.fact-check-table { overflow-x:auto; }.fact-check-head,.fact-check-row { min-width:760px; }}
+
+.cv-full-preview { margin-top:20px; padding:14px; border:1px solid var(--line); border-radius:12px; background:#f7f9fc; }
+.cv-full-preview h4 { margin:0 0 10px; }.cv-full-preview iframe { display:block; width:100%; height:72vh; min-height:560px; border:1px solid var(--line); background:white; }
+.cv-extracted-text { margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:8px; background:#fff; }.cv-extracted-text pre,.parsed-preview pre { max-height:340px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font-size:.7rem; line-height:1.45; }
+.uploaded-video-preview { display:block; width:100%; max-height:560px; margin-top:16px; border-radius:10px; background:#111; }
+.review-results-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.review-result-card,.saved-decision,.decision-form { padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.review-result-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }.review-result-heading h4 { margin:7px 0; text-transform:capitalize; }
+.review-result-card p,.review-result-card li,.saved-decision p { color:#52627a; font-size:.72rem; line-height:1.5; overflow-wrap:anywhere; }.review-result-card small,.saved-decision small { color:var(--muted); font-size:.65rem; }
+.review-result-card ul { padding-left:18px; }.saved-decision { margin:16px 0; border-left:4px solid var(--cobalt); }.saved-decision h4 { margin:8px 0; }
+.decision-form { display:grid; gap:12px; margin-top:16px; }.decision-form h4 { margin:0; }.decision-form .field { display:grid; gap:6px; }.decision-form textarea { resize:vertical; }
+.decision-form button:disabled,.sticky-nav button:disabled { opacity:.55; cursor:not-allowed; }
+.submitted-status { margin:12px 0; }
+@media(max-width:900px){.review-results-grid{grid-template-columns:1fr}.cv-full-preview iframe{height:65vh;min-height:400px}}
