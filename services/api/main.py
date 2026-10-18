@@ -131,7 +131,7 @@ DATABASE_PATH = os.getenv("GRANT_PANEL_DATABASE_PATH", os.path.join(DATA_DIR, "g
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GROQ_TRANSCRIPTION_MODEL = os.getenv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo")
 MAX_CV_BYTES = 10 * 1024 * 1024
-MAX_VIDEO_BYTES = 50 * 1024 * 1024
+MAX_VIDEO_BYTES = 200 * 1024 * 1024
 PASSWORD_ITERATIONS = 600_000
 SESSION_LIFETIME_SECONDS = 60 * 60 * 24 * 30
 
@@ -462,10 +462,15 @@ def extract_uploaded_cv(pdf_bytes: bytes) -> Dict[str, Any]:
     return {"text": ocr_text, "method": "rapidocr"}
 
 
-async def read_upload(file: UploadFile, limit: int) -> bytes:
+async def read_upload(
+    file: UploadFile,
+    limit: int,
+    *,
+    exceeded_detail: str = "The uploaded file exceeds the size limit.",
+) -> bytes:
     content = await file.read(limit + 1)
     if len(content) > limit:
-        raise HTTPException(status_code=413, detail="The uploaded file exceeds the size limit.")
+        raise HTTPException(status_code=413, detail=exceeded_detail)
     return content
 
 
@@ -522,7 +527,11 @@ async def upload_applicant_video(
     allowed_extensions = {".mp4", ".webm", ".mov"}
     if extension not in allowed_extensions:
         raise HTTPException(status_code=415, detail="Upload an MP4, WebM, or MOV video.")
-    content = await read_upload(file, MAX_VIDEO_BYTES)
+    content = await read_upload(
+        file,
+        MAX_VIDEO_BYTES,
+        exceeded_detail="The video exceeds the 200 MB limit. Choose a smaller or compressed video.",
+    )
     if not content:
         raise HTTPException(status_code=422, detail="The uploaded video is empty.")
     media_id = str(uuid.uuid4())

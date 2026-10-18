@@ -1,6 +1,9 @@
 import json
+import asyncio
 
 import numpy as np
+import pytest
+from fastapi import HTTPException
 
 from services.api import main
 
@@ -196,3 +199,30 @@ def test_video_review_reports_missing_cv_and_audio_as_inconclusive(monkeypatch):
     assert "parsed_cv" in result["missing_sources"]
     assert "audio_transcript" in result["missing_sources"]
     assert result["vision_analysis"]["used"] is True
+
+
+class FakeUpload:
+    def __init__(self, content):
+        self.content = content
+
+    async def read(self, limit):
+        return self.content[:limit]
+
+
+def test_video_upload_limit_allows_files_up_to_200_mb():
+    assert main.MAX_VIDEO_BYTES == 200 * 1024 * 1024
+    assert len(asyncio.run(main.read_upload(FakeUpload(b"12345"), 5))) == 5
+
+
+def test_video_upload_limit_reports_a_clear_413_for_oversized_file():
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            main.read_upload(
+                FakeUpload(b"123456"),
+                5,
+                exceeded_detail="The video exceeds the 200 MB limit.",
+            )
+        )
+
+    assert error.value.status_code == 413
+    assert error.value.detail == "The video exceeds the 200 MB limit."
