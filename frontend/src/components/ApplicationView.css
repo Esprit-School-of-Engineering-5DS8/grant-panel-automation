@@ -1,0 +1,1291 @@
+/* ==========================================================================
+   ApplicationView.css — Tiimi-inspired Candidate Evaluation Modal & Stepper
+   ========================================================================== */
+
+/* ── Modal Backdrop & Outer Container ── */
+.appview-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: appviewFadeIn 0.2s ease-out;
+}
+
+@keyframes appviewFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes appviewSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.appview-modal-container {
+  width: 100%;
+  max-width: 1260px;
+  height: 92vh;
+  max-height: 940px;
+  background: #f8fafc;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: appviewSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+/* ── Root Layout ── */
+.appview-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  color: #0f172a;
+  font-family: var(--font-family-base);
+}
+
+/* ── Top Header ── */
+.appview-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 24px 18px 24px;
+  flex-shrink: 0;
+}
+
+.appview-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.appview-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appview-nav-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+
+.appview-nav-arrow:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.appview-nav-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.appview-breadcrumb-text {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.appview-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.appview-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+.appview-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.appview-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.appview-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  border: 2px solid #ffffff;
+}
+
+.appview-identity-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.appview-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.appview-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.appview-overall-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid #fde68a;
+}
+
+.appview-overall-star {
+  color: #f59e0b;
+  font-size: 0.9rem;
+}
+
+.appview-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ecfdf5;
+  color: #047857;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #a7f3d0;
+}
+
+.appview-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.appview-status-pill.needs-review {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.appview-status-pill.needs-review .appview-status-dot {
+  background: #3b82f6;
+}
+
+.appview-status-pill.in-review {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+.appview-status-pill.in-review .appview-status-dot {
+  background: #f59e0b;
+}
+
+.appview-status-pill.decision-needed {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.appview-status-pill.decision-needed .appview-status-dot {
+  background: #ef4444;
+}
+
+.appview-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.appview-sub-item {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.appview-sub-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.appview-sub-val {
+  font-size: 0.84rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+/* ── Header Action Buttons ── */
+.appview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.appview-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e3a5f;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+.appview-btn-primary:hover:not(:disabled) {
+  background: #0f243d;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.2);
+}
+
+.appview-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.appview-btn-primary .spin {
+  animation: appviewSpin 1s linear infinite;
+}
+
+@keyframes appviewSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.appview-btn-outlined {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.appview-btn-outlined:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.appview-btn-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #106b52;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(16, 107, 82, 0.2);
+}
+
+.appview-btn-email:hover {
+  background: #0d5440;
+}
+
+/* ── Body (Scrollable Split View) ── */
+.appview-body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 980px) {
+  .appview-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.appview-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.appview-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── Generic Cards ── */
+.appview-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.appview-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.appview-move-stage-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.appview-move-stage-btn:hover {
+  background: #1e293b;
+}
+
+/* ── Hiring Process Stepper ── */
+.appview-hiring-card {
+  padding-bottom: 16px;
+}
+
+.appview-hiring-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 18px;
+  padding: 0 8px;
+}
+
+.appview-hiring-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.appview-hiring-step:last-child {
+  flex: 1;
+}
+
+.appview-hiring-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px #cbd5e1;
+  z-index: 2;
+  transition: all 0.2s ease;
+}
+
+.appview-hiring-step.done .appview-hiring-dot {
+  background: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.appview-hiring-step.active .appview-hiring-dot {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px #2563eb;
+  border: 3px solid #2563eb;
+  width: 16px;
+  height: 16px;
+}
+
+.appview-hiring-line {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.appview-hiring-step.done .appview-hiring-line {
+  background: #2563eb;
+}
+
+.appview-hiring-label {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.appview-hiring-step.active .appview-hiring-label {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.appview-hiring-step.done .appview-hiring-label {
+  color: #0f172a;
+}
+
+/* ── Live Automation Pipeline Sub-steps ── */
+.appview-pipeline-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.appview-pipeline-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.appview-pipeline-step i {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: inline-block;
+}
+
+.appview-pipeline-step.queued {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.appview-pipeline-step.in_progress {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.appview-pipeline-step.in_progress i {
+  animation: appviewPulse 1s infinite alternate;
+}
+
+@keyframes appviewPulse {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+.appview-pipeline-step.complete {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+  font-weight: 600;
+}
+
+.appview-pipeline-step.complete i {
+  color: #16a34a;
+}
+
+.appview-pipeline-step.failed {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+  font-weight: 600;
+}
+
+.appview-pipeline-step.skipped {
+  background: #f1f5f9;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.appview-token-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.appview-token-label .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Candidate Score Card ── */
+.appview-score-card {
+  padding: 18px 20px;
+}
+
+.appview-score-body {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .appview-score-body {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
+
+.appview-score-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-right: 1px solid #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .appview-score-left {
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+  }
+}
+
+.appview-score-big {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.appview-score-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.app-score-stars {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.app-star {
+  font-size: 1.1rem;
+  color: #e2e8f0;
+}
+
+.app-star.filled {
+  color: #f59e0b;
+}
+
+.appview-score-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-score-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 45px;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-score-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.app-score-bar-wrap {
+  height: 7px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 9999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-score-star {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #b45309;
+  text-align: right;
+}
+
+/* ── Navigation Tabs (Pill Style) ── */
+.appview-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+
+.appview-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.appview-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.appview-tab .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.appview-tab:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.appview-tab.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+
+.appview-tab.active .material-symbols-outlined {
+  color: #ffffff;
+}
+
+/* ── Tab Content Container ── */
+.appview-tab-content {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.appview-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+/* ── Profile Grid ── */
+.appview-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.appview-profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+}
+
+.appview-profile-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.appview-profile-item strong {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.appview-exp-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appview-exp-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.appview-exp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.appview-prose {
+  font-size: 0.88rem;
+  color: #334155;
+  line-height: 1.6;
+  background: #f8fafc;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+/* ── Form Submission DL ── */
+.appview-form-section {
+  margin-bottom: 20px;
+}
+
+.appview-form-section-head {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.appview-form-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.appview-form-row dt {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.appview-form-row dd {
+  font-size: 0.88rem;
+  color: #0f172a;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Compliance / RAG Cards ── */
+.appview-compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.appview-compliance-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.appview-compliance-card.pass {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.appview-compliance-card.fail {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.appview-compliance-card.warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.appview-compliance-card strong {
+  display: block;
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.appview-compliance-card small {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.appview-rag-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appview-rag-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.appview-rag-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.appview-state-chip {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.appview-state-chip.compliant {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.appview-state-chip.non_compliant {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.appview-state-chip.insufficient_evidence,
+.appview-state-chip.needs_human_review {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.appview-rag-claim {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.appview-rag-rationale {
+  font-size: 0.82rem;
+  color: #475569;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.appview-rag-citation {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.appview-rag-citation .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.appview-rag-chunk {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+}
+
+.appview-rag-chunk-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.appview-relevance {
+  font-size: 0.72rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* ── Decision Tab ── */
+.appview-review-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.appview-review-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.appview-review-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.appview-review-score {
+  margin-left: auto;
+  font-weight: 700;
+  color: #b45309;
+  font-size: 0.85rem;
+}
+
+.appview-recommendation {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.appview-recommendation.fund {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.appview-recommendation.reserve {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.appview-recommendation.reject {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.appview-ai-opinion {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.appview-ai-opinion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.appview-opinion-text {
+  font-size: 0.86rem;
+  color: #166534;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.appview-decision-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appview-decision-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.appview-decision-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.appview-decision-row select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #ffffff;
+}
+
+.appview-score-display {
+  font-size: 1.15rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.appview-notes-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.appview-notes-label textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.86rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.appview-verified-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+/* ── Sidebar Cards ── */
+.appview-sidebar-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appview-sidebar-card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.app-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.app-info-row-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.app-info-icon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.app-info-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.app-info-value {
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+  word-break: break-all;
+}
+
+/* Rounded pill badge styling for email and phone from screenshot */
+.app-info-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.app-info-pill:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.app-info-empty {
+  color: #94a3b8;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── Notes Input in Sidebar ── */
+.appview-note-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  font-size: 0.84rem;
+  font-family: inherit;
+  resize: none;
+  background: #f8fafc;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.appview-note-input:focus {
+  outline: none;
+  border-color: #94a3b8;
+  background: #ffffff;
+}
+
+.appview-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.appview-empty-state .material-symbols-outlined {
+  font-size: 40px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.appview-empty-state strong {
+  font-size: 0.95rem;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.appview-empty-state small {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}

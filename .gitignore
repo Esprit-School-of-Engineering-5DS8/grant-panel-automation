@@ -22,7 +22,11 @@ data/synthetic_proposals/
 data/student_uploads/
 audit-esprit-grant-panel.html
 
+
 # Local applicant media and private documents
 *.mp4
 Advanced DL-Exam-6.pdf
 cv-hazem-mrad-toptal.pdf
+
+# Tool and agent cache
+.freebuff/

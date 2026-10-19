@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 152" role="img" aria-label="Yale University">
+  <defs>
+    <clipPath id="shieldClip">
+      <path d="M12 12 H108 V70 C108 104 86 126 60 138 C34 126 12 104 12 70 Z" />
+    </clipPath>
+  </defs>
+  <path d="M12 12 H108 V70 C108 104 86 126 60 138 C34 126 12 104 12 70 Z" fill="#0a3a70" />
+  <g clip-path="url(#shieldClip)">
+    <path d="M60 60 L60 100" stroke="#c9d6ea" stroke-width="1.4" fill="none" />
+    <path d="M20 58 C36 50 50 50 59 57 L59 97 C50 90 36 90 20 98 Z" fill="#ffffff" stroke="#0a3a70" stroke-width="1.6" stroke-linejoin="round" />
+    <path d="M100 58 C84 50 70 50 61 57 L61 97 C70 90 84 90 100 98 Z" fill="#ffffff" stroke="#0a3a70" stroke-width="1.6" stroke-linejoin="round" />
+    <g stroke="#0a3a70" stroke-width="1.5" stroke-linecap="round">
+      <path d="M33 66 v9" /><path d="M40 64 v9" /><path d="M46 63 v9" />
+      <path d="M74 63 v9" /><path d="M80 64 v9" /><path d="M87 66 v9" />
+      <path d="M38 79 v8" /><path d="M45 78 v8" />
+      <path d="M75 78 v8" /><path d="M82 79 v8" />
+    </g>
+    <path d="M20 98 C36 90 50 90 59 97 L59 101 C50 94 36 94 20 102 Z" fill="#e7edf7" />
+    <path d="M100 98 C84 90 70 90 61 97 L61 101 C70 94 84 94 100 102 Z" fill="#e7edf7" />
+  </g>
+  <path d="M6 118 C26 112 42 118 60 118 C78 118 94 112 114 118 L114 133 C94 127 78 133 60 133 C42 133 26 127 6 133 Z" fill="#ffffff" stroke="#0a3a70" stroke-width="1.6" />
+  <text x="60" y="129.4" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="8.4" font-weight="700" letter-spacing="0.5" fill="#0a3a70">LUX ET VERITAS</text>
+</svg>

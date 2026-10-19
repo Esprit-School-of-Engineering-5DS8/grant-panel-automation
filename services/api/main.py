@@ -253,7 +253,7 @@ def _groq_json_completion(
     *,
     model: str = GROQ_AUDIT_MODEL,
     timeout: int = 90,
-    max_tokens: int = 900,
+    max_tokens: int = 600,
 ) -> Dict[str, Any]:
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY is not configured; AI review was not run.")
@@ -465,10 +465,11 @@ def _run_rag_fact_check(candidate: Dict[str, Any]) -> Dict[str, Any]:
     claims = _candidate_claims(candidate)
     claim_evidence: List[Dict[str, Any]] = []
     for claim in claims:
-        query = f"{claim['claim']} fellowship eligibility requirements"
+        # Use a short focused query instead of the full claim text to save tokens
+        query = f"{claim['id']} fellowship eligibility requirements"
         claim_evidence.append({
             **claim,
-            "evidence": _retrieve_corpus_chunks(query, top_k=4),
+            "evidence": _retrieve_corpus_chunks(query, top_k=3),
         })
     if not claims:
         return {"status": "insufficient_evidence", "model": GROQ_AUDIT_MODEL, "checks": [], "message": "No declared claims were available to compare."}
@@ -486,32 +487,35 @@ def _run_rag_fact_check(candidate: Dict[str, Any]) -> Dict[str, Any]:
     prompt_payload = [
         {
             "id": claim["id"],
-            "claim": claim["claim"],
+            # Truncate the claim itself to avoid runaway token counts
+            "claim": str(claim["claim"])[:400],
             "retrieved_evidence": [
                 {
                     "document": chunk["document"],
                     "section": chunk["section"],
-                    "quote": chunk["text"][:3000],
+                    # Reduced from 3000 → 800 chars per chunk (saves ~70% on this stage)
+                    "quote": chunk["text"][:800],
                 }
                 for chunk in claim["evidence"]
             ],
         }
         for claim in claim_evidence
     ]
-    answer = _groq_json_completion([
-        {
-            "role": "system",
-            "content": (
-                "You are a cautious fellowship-rules fact checker. Use only the supplied corpus excerpts. "
-                "Semantic similarity is not proof that a rule is satisfied. For each claim, choose exactly one state: "
-                "compliant, non_compliant, insufficient_evidence, or needs_human_review. A requirement is compliant "
-                "only when the candidate evidence explicitly satisfies it; state non_compliant only when an explicit "
-                "rule is contradicted. Cite a verbatim quote from the supplied excerpt and its document. If no exact "
-                "rule supports the conclusion, use insufficient_evidence. Return JSON {checks:[{id,state,rationale,citation:{document,quote}|null}]}."
-            ),
-        },
-        {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
-    ])
+    answer = _groq_json_completion(
+        [
+            {
+                "role": "system",
+                "content": (
+                    "Fellowship-rules fact checker. Use only the supplied excerpts. "
+                    "For each claim choose: compliant, non_compliant, insufficient_evidence, or needs_human_review. "
+                    "Compliant only when candidate evidence explicitly satisfies a rule; non_compliant only when a rule is contradicted. "
+                    "Cite a verbatim quote and document. Return JSON {checks:[{id,state,rationale,citation:{document,quote}|null}]}."
+                ),
+            },
+            {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
+        ],
+        max_tokens=500,
+    )
     raw_checks = answer.get("checks")
     raw_by_id = {item.get("id"): item for item in raw_checks if isinstance(item, dict)} if isinstance(raw_checks, list) else {}
     allowed_states = {"compliant", "non_compliant", "insufficient_evidence", "needs_human_review"}
@@ -575,7 +579,8 @@ def _sample_video_frames(video_path: str, duration: Optional[float]) -> tuple[Li
     ffmpeg = _ffmpeg_path()
     if not duration or duration <= 0:
         return [], "Video duration was unavailable; visual frame sampling was skipped."
-    sample_count = min(8, max(2, math.ceil(duration / 30)))
+    # Cap at 3 frames to stay within per-request token budget (was 8)
+    sample_count = min(3, max(1, math.ceil(duration / 60)))
     timestamps = sorted({round(duration * (index + 0.5) / sample_count, 2) for index in range(sample_count)})
     frames: List[Dict[str, Any]] = []
     if not ffmpeg:
@@ -920,17 +925,21 @@ def cross_verify_evidence_llm(payload: AdminArtifactPayload):
         for label, form_value, cv_value, video_value in facts
     ]
     try:
-        answer = _groq_json_completion([
-            {
-                "role": "system",
-                "content": (
-                    "Compare only the supplied form, CV extraction, and video transcript. Do not equate absence "
-                    "with contradiction. Use states match, contradiction, partial, or insufficient_evidence. "
-                    "Return JSON {checks:[{fact,state,explanation}],summary}. This is evidence triage, not a grant decision."
-                ),
-            },
-            {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)},
-        ])
+        answer = _groq_json_completion(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "Compare form, CV, and video fields. States: match, contradiction, partial, insufficient_evidence. "
+                        "Return JSON {checks:[{fact,state,explanation}],summary}. Evidence triage only, not a grant decision."
+                    ),
+                },
+                {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)},
+            ],
+            # Use the lighter CV-label model for a simple 7-field comparison
+            model=GROQ_CV_LABEL_MODEL,
+            max_tokens=500,
+        )
     except Exception as exc:
         logger.exception("LLM cross-verification failed for candidate %s", candidate_id(candidate))
         raise HTTPException(status_code=502, detail=f"LLM evidence comparison failed: {exc}")
@@ -1014,7 +1023,7 @@ def overall_opinion_llm(payload: AdminArtifactPayload):
                     "chair makes the final decision. Return JSON {opinion:string}."
                 ),
             },
-            {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)[:18000]},
+            {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)[:10000]},
         ])
     except Exception as exc:
         logger.exception("LLM chair advisory failed for candidate %s", candidate_id(candidate))
@@ -1233,7 +1242,8 @@ def evaluate_criterion(payload: EvaluateCriterionPayload):
     query = f"{criterion_labels[crit]} fellowship evaluation criteria"
     # Criterion calls use a compact context and a smaller model. The full dossier
     # can contain OCR payloads and video transcripts that exceed Groq TPM limits.
-    evidence = _retrieve_corpus_chunks(query, top_k=3)
+    # top_k reduced from 3→2 to cut prompt size per criterion call.
+    evidence = _retrieve_corpus_chunks(query, top_k=2)
     if not evidence:
         raise HTTPException(status_code=422, detail="No relevant rule excerpts were retrieved from the configured corpus.")
     common = {
@@ -1261,7 +1271,7 @@ def evaluate_criterion(payload: EvaluateCriterionPayload):
         "criterion": criterion_labels[crit],
         "candidate_record": common,
         "retrieved_rule_excerpts": [
-            {"document": item["document"], "section": item["section"], "quote": item["text"][:1400]}
+            {"document": item["document"], "section": item["section"], "quote": item["text"][:800]}
             for item in evidence
         ],
         "additional_context": payload.rag_rules_context or "",
@@ -1280,7 +1290,7 @@ def evaluate_criterion(payload: EvaluateCriterionPayload):
                 ),
             },
             {"role": "user", "content": json.dumps(prompt, ensure_ascii=False)},
-        ], model=GROQ_CRITERION_MODEL, max_tokens=1600)
+        ], model=GROQ_CRITERION_MODEL, max_tokens=700)
     except Exception as exc:
         logger.exception("LLM criterion evaluation failed for %s", crit)
         raise HTTPException(status_code=502, detail=f"LLM criterion evaluation failed: {exc}")
@@ -1824,6 +1834,19 @@ def run_candidate_audit(proposal_id: str) -> None:
         if not enabled:
             _save_audit_stage(proposal_id, name, "skipped", error="Required evidence was not submitted.")
             return None
+        # --- Stage-level result cache: skip if already completed successfully ---
+        # This avoids re-burning API tokens on reruns that hit rate limits midway.
+        try:
+            with open(_candidate_record_path(proposal_id), "r", encoding="utf-8") as _f:
+                _cached = json.load(_f)
+            _stage_entry = (_cached.get("audit") or {}).get("stages", {}).get(name, {})
+            _cached_result = (_cached.get("audit") or {}).get("results", {}).get(name)
+            if _stage_entry.get("status") == "complete" and _cached_result is not None:
+                logger.info("Audit stage %s already complete for %s; skipping", name, proposal_id)
+                return _cached_result
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+        # -----------------------------------------------------------------
         _save_audit_stage(proposal_id, name, "in_progress")
         try:
             result = operation()

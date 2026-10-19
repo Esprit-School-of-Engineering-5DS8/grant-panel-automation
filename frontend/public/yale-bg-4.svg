@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Yale blue crest and light rays">
+  <defs>
+    <radialGradient id="bg4" cx=".72" cy=".28" r="1">
+      <stop offset="0" stop-color="#15518f"/>
+      <stop offset=".55" stop-color="#0a2f5a"/>
+      <stop offset="1" stop-color="#04101f"/>
+    </radialGradient>
+    <linearGradient id="ray4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9cc2ff" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#9cc2ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1600" fill="url(#bg4)"/>
+  <g fill="url(#ray4)">
+    <path d="M1200 0 L380 1600 H620 L1200 260 Z"/>
+    <path d="M1200 380 L820 1600 H980 L1200 700 Z"/>
+    <path d="M760 0 L60 1080 L160 1080 L900 0 Z"/>
+  </g>
+  <g opacity=".12" fill="none" stroke="#dbe8ff" stroke-width="3">
+    <g transform="translate(600 720)">
+      <path d="M-260 -300 H260 V20 C260 210 140 330 0 400 C-140 330 -260 210 -260 20 Z"/>
+      <path d="M-200 -240 H200 V20 C200 170 106 268 0 330 C-106 268 -200 170 -200 20 Z"/>
+      <path d="M0 -240 V330" stroke-width="2"/>
+      <path d="M-200 -60 H200" stroke-width="2"/>
+    </g>
+  </g>
+  <g fill="#ffffff" opacity=".4">
+    <circle cx="220" cy="240" r="3"/><circle cx="420" cy="150" r="2"/><circle cx="980" cy="520" r="2.5"/>
+    <circle cx="150" cy="700" r="2"/><circle cx="1040" cy="980" r="3"/><circle cx="760" cy="1360" r="2"/>
+  </g>
+  <g fill="#0a2f5a" opacity=".45">
+    <circle cx="1060" cy="1180" r="220"/>
+    <circle cx="120" cy="1320" r="180"/>
+  </g>
+</svg>

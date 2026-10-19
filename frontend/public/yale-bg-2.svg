@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Gothic arcade of Yale">
+  <defs>
+    <linearGradient id="sky2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071a33"/>
+      <stop offset=".6" stop-color="#0b2f5c"/>
+      <stop offset="1" stop-color="#071627"/>
+    </linearGradient>
+    <linearGradient id="wall2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d2a4c"/>
+      <stop offset="1" stop-color="#050f1d"/>
+    </linearGradient>
+    <linearGradient id="win2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd98a"/>
+      <stop offset="1" stop-color="#b97f2c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1600" fill="url(#sky2)"/>
+  <rect y="360" width="1200" height="1240" fill="url(#wall2)"/>
+  <g fill="url(#win2)" opacity=".82">
+    <path d="M70 1120 V760 Q160 600 250 760 V1120 Z"/>
+    <path d="M310 1120 V760 Q400 600 490 760 V1120 Z"/>
+    <path d="M550 1120 V760 Q640 600 730 760 V1120 Z"/>
+    <path d="M790 1120 V760 Q880 600 970 760 V1120 Z"/>
+    <path d="M1030 1120 V760 Q1120 600 1210 760 V1120 Z"/>
+  </g>
+  <g fill="#071a33" opacity=".55">
+    <path d="M110 1120 V760 Q160 650 210 760 V1120 Z"/>
+    <path d="M350 1120 V760 Q400 650 450 760 V1120 Z"/>
+    <path d="M590 1120 V760 Q640 650 690 760 V1120 Z"/>
+    <path d="M830 1120 V760 Q880 650 930 760 V1120 Z"/>
+    <path d="M1070 1120 V760 Q1120 650 1170 760 V1120 Z"/>
+  </g>
+  <g fill="#081a30">
+    <rect x="0" y="360" width="1200" height="90"/>
+    <path d="M0 450 H1200 V500 H0 Z" opacity=".7"/>
+  </g>
+  <g fill="#f4c96b" opacity=".5">
+    <circle cx="160" cy="1240" r="5"/><circle cx="400" cy="1280" r="4"/><circle cx="640" cy="1250" r="5"/><circle cx="880" cy="1290" r="4"/><circle cx="1120" cy="1250" r="5"/>
+  </g>
+  <rect y="1300" width="1200" height="300" fill="#040c17"/>
+</svg>
