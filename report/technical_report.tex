@@ -53,17 +53,17 @@
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.3pt}
-\fancyhead[L]{\footnotesize Open Doors --- AI-Assisted Scholarship Review}
-\fancyhead[R]{\footnotesize Advanced Deep Learning --- Esprit 5DS}
+\fancyhead[L]{\footnotesize Yale Grant Panel - AI-Assisted Scholarship Review}
+\fancyhead[R]{\footnotesize Advanced Deep Learning - Esprit 5DS}
 \fancyfoot[C]{\footnotesize\thepage}
 
 \begin{document}
 
 \begin{center}
-{\LARGE\bfseries\color{brand} Open Doors}\\[2pt]
+{\LARGE\bfseries\color{brand} Yale Grant Panel}\\[2pt]
 {\large AI-Automated Grant \& Scholarship Review Panel}\\[5pt]
-{\normalsize Technical Report --- Advanced Deep Learning (AI Automation)}\\[2pt]
-{\small Esprit 5DS, 2026--2027 --- Team 5DS8}
+{\normalsize Technical Report - Advanced Deep Learning (AI Automation)}\\[2pt]
+{\small Esprit 5DS, 2026-2027 - Team 5DS8}
 \end{center}
 \vspace{-6pt}
 \noindent\rule{\textwidth}{0.6pt}
@@ -72,7 +72,7 @@
 Committees must grade many applications quickly. Manual review is slow and biased:
 \textbf{grade inflation} (everyone gets ``good''), the \textbf{halo effect} (a great essay hides a broken budget), \textbf{anchoring} (later reviewers copy the first), and \textbf{unchecked claims} (a stated GPA or ``+45\%'' result that the documents do not support).
 
-\textbf{Open Doors} automates the review. It reads a candidate dossier (form + CV/PDF + short video), checks the hard rules in plain code, asks three AI evaluators to score independently, settles disagreements, and produces a ranked recommendation. A human always makes the final call.
+\textbf{Yale Grant Panel} automates the review. It reads a candidate dossier (form + CV/PDF + short video), checks the hard rules in plain code, asks three AI evaluators to score independently, settles disagreements, and produces a ranked recommendation. A human always makes the final call.
 
 \begin{center}
 \footnotesize\textcolor{blue!55!black}{$\blacksquare$}~code (exact, no AI) \quad
@@ -98,6 +98,15 @@ The workflow has four phases, shown in Figure~\ref{fig:phases}. It runs inside \
 \label{fig:phases}
 \end{figure}
 
+The exported n8n workflow is the executable backbone of the system. Figure~\ref{fig:workflow} shows the concrete automation canvas used to connect intake, deterministic checks, evaluator branches, arbitration, verification, and human approval.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/07-workflow.png}
+\caption{Exported n8n workflow used for end-to-end orchestration.}
+\label{fig:workflow}
+\end{figure}
+
 \begin{itemize}
   \item \textbf{Ingest \& check.} Read the PDF, CV and video. Then pure code checks the hard rules (GPA, allowance caps, budget math). A failure stops here.
   \item \textbf{Evaluate.} Three agents score the dossier \emph{separately}: academic, impact, budget.
@@ -106,16 +115,16 @@ The workflow has four phases, shown in Figure~\ref{fig:phases}. It runs inside \
 \end{itemize}
 
 \section{The Interface}
-The portal (React) has two views. Applicants submit and track their dossier (Figure~\ref{fig:ui-student}); the committee reviews candidates (Figure~\ref{fig:ui-admin}).
+The portal (React + Vite) has separate applicant and committee experiences. Applicants submit and track their dossier (Figure~\ref{fig:ui-student}); the committee reviews candidates (Figure~\ref{fig:ui-admin}). The screenshots below were retaken from the current UI on 19 October 2026.
 
 \begin{figure}[h]
 \centering
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/01-applicant-portal.png}\\
+\includegraphics[width=\linewidth]{figures/01-applicant-portal-new.png}\\
 \footnotesize (a) Applicant sign-in
 \end{minipage}\hfill
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/02-student-workspace.png}\\
+\includegraphics[width=\linewidth]{figures/02-student-workspace-new.png}\\
 \footnotesize (b) Student workspace
 \end{minipage}
 \caption{The applicant-facing portal.}
@@ -125,37 +134,37 @@ The portal (React) has two views. Applicants submit and track their dossier (Fig
 \begin{figure}[h]
 \centering
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/03-admin-overview.png}\\
-\footnotesize (a) Committee overview
+\includegraphics[width=\linewidth]{figures/03-admin-signin-new.png}\\
+\footnotesize (a) Committee sign-in
 \end{minipage}\hfill
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/04-candidate-audit.png}\\
-\footnotesize (b) Candidate audit
+\includegraphics[width=\linewidth]{figures/04-admin-overview-new.png}\\
+\footnotesize (b) Committee overview
 \end{minipage}
-\caption{The committee console.}
+\caption{The committee console, including its secure sign-in and overview workspace.}
 \label{fig:ui-admin}
 \end{figure}
 
 \section{The Tools We Chose}
 \begin{itemize}
-  \item \textbf{n8n} --- orchestrates the workflow. It gives retries, logs, and a visual branch for the human step. Exports as one JSON file (easy to submit).
-  \item \textbf{FastAPI (Python)} --- runs the real logic (parsing, math, checks). n8n calls it over HTTP.
-  \item \textbf{Qdrant} --- vector database for searching the rule corpus by similarity.
-  \item \textbf{React + Vite} --- the web portal: a student view and a committee view.
-  \item \textbf{Docker Compose} --- starts n8n and Qdrant with one command.
-  \item \textbf{Python libraries} --- \texttt{pypdf}, \texttt{sentence-transformers}, \texttt{reportlab}.
+  \item \textbf{n8n}: orchestrates the workflow. It gives retries, logs, and a visual branch for the human step. Exports as one JSON file (easy to submit).
+  \item \textbf{FastAPI (Python)}: runs the real logic (parsing, math, checks). n8n calls it over HTTP.
+  \item \textbf{Qdrant-ready RAG boundary}: the architecture exposes a vector-store boundary, while the verified local run uses the deterministic TF-IDF retriever; Qdrant persistence was not counted as independently verified.
+  \item \textbf{React + Vite}: the web portal: a student view and a committee view.
+  \item \textbf{Docker Compose}: starts n8n and Qdrant with one command.
+  \item \textbf{Python libraries}: \texttt{pypdf}, \texttt{scikit-learn}, \texttt{PyMuPDF}, \texttt{reportlab}, and optional \texttt{sentence-transformers}.
 \end{itemize}
 
 \section{The LLM We Chose}
 \begin{itemize}
-  \item \textbf{Groq \texttt{llama-3.3-70b-versatile}} --- writes the chair's advisory and decision letter. Fast, reliable, low temperature (0.1) for factual tone.
-  \item \textbf{Groq \texttt{whisper-large-v3-turbo}} --- transcribes the video pitch.
-  \item \textbf{\texttt{all-MiniLM-L6-v2}} --- local embedding model for search (applicant text never leaves the machine).
+  \item \textbf{Groq \texttt{openai/gpt-oss-120b}}: configured for criterion and audit reasoning. The provider is selected for accessible API integration and low-temperature structured outputs; the system remains usable in deterministic fallback mode when the key or quota is unavailable.
+  \item \textbf{Groq \texttt{whisper-large-v3-turbo}}: transcribes the video pitch.
+  \item \textbf{\texttt{all-MiniLM-L6-v2} (optional)}: an optional local embedding model for offline experiments; the stored benchmark reported here uses the deterministic TF-IDF fallback, so the result is reproducible without downloading a model.
   \item \textbf{Rule: code does the math, AI does the language.} Scores, caps and quote-checks are computed in code. Every AI call has a fallback, so the demo never invents a result.
 \end{itemize}
 
 \section{Retrieval (RAG)}
-The knowledge base is \textbf{8 rule documents}. We tested two ways to split them into chunks (Figure~\ref{fig:rag}): \textbf{A} = fixed 400-word windows (8 chunks); \textbf{B} = one chunk per section with metadata (30 chunks).
+The knowledge base is \textbf{8 versioned rule documents}. We tested two ways to split them into chunks (Figure~\ref{fig:rag}): \textbf{A} = fixed 400-token windows with 50-token overlap (8 chunks); \textbf{B} = one Markdown section per chunk with metadata (30 chunks). The verified application path uses structural sections and TF-IDF cosine similarity with top-$k$ retrieval; Qdrant and dense embeddings remain an extension point rather than a claimed live dependency.
 
 \begin{figure}[h]
 \centering
@@ -179,18 +188,18 @@ The knowledge base is \textbf{8 rule documents}. We tested two ways to split the
 \toprule
 & \textbf{A (fixed)} & \textbf{B (structural)} \\
 \midrule
-Recall@1 / @3 / @5 & 0.63 / 0.77 / 0.90 & 0.43 / 0.70 / 0.80 \\
-MRR & 0.73 & 0.58 \\
-Trap refusal (5 trick questions) & 0.60 & 0.40 \\
+Recall@1 / @3 / @5 & 1.00 / 1.00 / 1.00 & 0.8667 / 1.00 / 1.00 \\
+MRR & 1.00 & 0.9333 \\
+Trap refusal (5 trick questions) & 1.00 & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Why B ships anyway:} A scores higher, but B tags each chunk with its criterion, so the budget agent only reads budget rules (no cross-contamination). Figure~\ref{fig:ui-rag} shows rule retrieval in the console.
+\textbf{Why B remains valuable:} A is the stronger verified retrieval baseline, while B preserves criterion and section metadata for filtered agent context. We retain both strategies for ablation and use structural metadata to reduce cross-contamination. Figure~\ref{fig:ui-rag} shows rule retrieval in the console.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.74\textwidth]{figures/05-rag-rules.png}
+\includegraphics[width=0.92\textwidth]{figures/05-rag-rules-new.png}
 \caption{Rule retrieval inside the committee console.}
 \label{fig:ui-rag}
 \end{figure}
@@ -231,7 +240,7 @@ Three agents score the same dossier in \emph{isolated} contexts, then code handl
 \textbf{Why not other designs?} One big prompt $\rightarrow$ halo effect. A chain of reviewers $\rightarrow$ anchoring. An open chat $\rightarrow$ groupthink. Letting AI do the arithmetic $\rightarrow$ wrong numbers.
 
 \section{Multimodal Checks}
-The system compares three sources --- form, CV and video --- and flags contradictions (Figure~\ref{fig:multi}).
+The system compares three sources: form, CV and video, and flags contradictions (Figure~\ref{fig:multi}).
 
 \begin{figure}[h]
 \centering
@@ -249,17 +258,17 @@ The system compares three sources --- form, CV and video --- and flags contradic
 \end{figure}
 
 \begin{itemize}
-  \item \textbf{PDF} --- \texttt{pypdf} reads pages, sections and figures.
-  \item \textbf{CV} --- parses LaTeX/ATS text: GPA, degrees, honours, skills.
-  \item \textbf{Figures} --- compares a claimed number with the figure or transcript; large gaps are flagged.
-  \item \textbf{Video} --- Whisper turns the pitch into text for the cross-check.
+  \item \textbf{PDF}: \texttt{pypdf} reads pages, sections and figures.
+  \item \textbf{CV}: parses LaTeX/ATS text: GPA, degrees, honours, skills.
+  \item \textbf{Figures}: compares a claimed number with the figure or transcript; large gaps are flagged.
+  \item \textbf{Video/audio}: Groq Whisper Large v3 Turbo can transcribe the pitch; frame sampling and vision review are provider-dependent and are reported as unavailable rather than replaced by invented evidence when the key, model, or quota is missing.
 \end{itemize}
 
 \section{Evaluation}
 \begin{itemize}
-  \item \textbf{Search benchmark.} The A-vs-B test above uses 30 real questions + 5 trick questions.
+  \item \textbf{Search benchmark.} The A-vs-B test above uses 30 target-known queries plus 5 trap queries. The stored result gives A: Recall@1/3/5 = 1.00/1.00/1.00, MRR = 1.00, refusal = 1.00; B: 0.8667/1.00/1.00, MRR = 0.9333, refusal = 1.00.
   \item \textbf{Pipeline test.} \texttt{tests/test\_pipeline\_e2e.py} checks every stage on 5 designed cases.
-  \item \textbf{20 synthetic dossiers} with known answers, including 5 tricky ones:
+  \item \textbf{20 synthetic dossiers}, evaluated over 3 runs, with known defects and ranking comparisons:
 
 \begin{center}\small
 \begin{tabular}{lll}
@@ -274,29 +283,31 @@ YALE-05 & GPA 2.74 $<$ 3.00 (SAP rule) & reject \\
 \bottomrule
 \end{tabular}
 \end{center}
+The full-system ranking achieved Kendall's $\tau=0.9575$ against the human-consensus ordering, with three-run variance 0.0015. The no-discussion multi-agent ablation reached $\tau=0.9921$, so the complete system is not presented as universally superior; its value is the explicit conditional chair, traceability, multimodal path, and injection handling. The injected prompt was caught by the full system but missed by the monolithic baseline. The bias permutation audit observed a maximum score delta of 0.0. Average full-system cost in the benchmark was 10,800 tokens and 11.4 seconds per proposal.
 \end{itemize}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.74\textwidth]{figures/06-decisions.png}
-\caption{Decision register: the chair signs off on each recommendation.}
+\includegraphics[width=0.92\textwidth]{figures/06-decisions-new.png}
+\caption{Candidate audit register: status, decision, and evidence-review queue.}
 \label{fig:ui-dec}
 \end{figure}
 
 \section{Security}
 \begin{itemize}
-  \item \textbf{Injection defense.} Candidate text is wrapped as \emph{data}; override words (e.g.\ ``Ignore all previous instructions'') force a reject.
+  \item \textbf{Injection defense.} Candidate text is wrapped as \emph{data}; override instructions are treated as untrusted content. The full-system benchmark neutralized the injected case, while the monolithic baseline missed it.
   \item \textbf{Human-in-the-loop.} Nothing is awarded automatically.
   \item \textbf{No hallucinations.} Every comment must quote the source; a code check verifies each quote.
   \item \textbf{Secrets.} API keys live in the environment, never in the repo.
-  \item \textbf{Privacy.} Only synthetic data is used; text is embedded locally.
-  \item \textbf{To fix:} CORS is wide-open for the demo and must be restricted later.
+  \item \textbf{Privacy.} Only synthetic data is used for the reported benchmark. API keys remain in environment variables; production deployment must add retention controls, access control, encryption, and provider data-processing review.
+  \item \textbf{Known limitations.} CORS is wide-open for the demo, Qdrant persistence was not independently revalidated, and provider-backed transcription/vision depends on an enabled key and quota. These are explicit deployment risks, not hidden capabilities.
 \end{itemize}
 
+\enlargethispage{3cm}
 \section{Limits and Conclusion}
-At present the evaluators mix calibrated rules with AI reasoning; a later version should run all three through the LLM with the anchored rubric while keeping code for math. Qdrant is installed but the live search still uses keyword matching, and speech-to-text needs a configured key.
+At present the evaluators combine deterministic checks with optional Groq reasoning; the local benchmark deliberately uses the deterministic TF-IDF retriever. Dense embeddings, Qdrant persistence, live ASR, and provider-backed vision require their configured dependencies and are not silently assumed in the results.
 
-Still, Open Doors shows the key idea: keep AI for \emph{language and judgement} and code for \emph{facts}. The result is a review panel that cuts bias, never fabricates, and always leaves the final decision to a human.
+Still, Yale Grant Panel demonstrates the key idea: keep AI for \emph{language and judgement} and code for \emph{facts}. The result is a review panel that cuts bias, never fabricates, and always leaves the final decision to a human.
 
 \newpage
 \appendix
@@ -309,7 +320,7 @@ Each prompt was improved from v1 (failure) to v2 (fix). Full file: \texttt{promp
 You are an expert reviewer. Read the proposal and give a score
 between 1 and 5 with strengths and weaknesses.
 \end{lstlisting}
-\emph{Failure:} all scores 4.0--4.5, vague praise.
+\emph{Failure:} all scores 4.0-4.5, vague praise.
 
 \textbf{v2.}
 \begin{lstlisting}
