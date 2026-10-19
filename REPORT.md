@@ -212,6 +212,12 @@ In adherence to scientific integrity principles, the following system limitation
 
 ## 9. Deliverables & Demonstration Checklist
 
+## 10. Current Verification Boundary
+
+The repository contains both the simulator workflow and the admin-audit workflow, and the FastAPI bridge can dispatch either webhook. The workflows use `host.docker.internal` by default when calling the API from Docker, while Groq remains behind FastAPI's OpenAI-compatible HTTP client; this avoids depending on a native n8n Groq provider node.
+
+The following claims require a live environment check before being presented as demonstrated: an active n8n/Qdrant Docker stack, an activated imported workflow, one complete candidate execution through n8n, and regeneration of the retrieval, multimodal, cohort, and bias benchmarks from the current source. The latest local validation confirms frontend build, backend compilation, and workflow JSON validity, but Docker Desktop was not running, so no live n8n execution was claimed.
+
 All requirements stipulated in the Cahier des Charges are packaged and ready for the final defense:
 - **Exported n8n Workflow:** `workflows/grant_panel_simulator_n8n.json` ready for instant import and execution.
 - **Versioned Prompt Library:** `prompts/prompt_library.md` documenting v1 failure modes and v2 few-shot fixes.

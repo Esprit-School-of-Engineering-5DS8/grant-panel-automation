@@ -6,9 +6,11 @@ import './index.css'
 import './m3/material.css'
 import './m3/md'
 import App from './App.tsx'
+import { ToastHost } from './components/ToastHost'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <ToastHost />
   </StrictMode>,
 )

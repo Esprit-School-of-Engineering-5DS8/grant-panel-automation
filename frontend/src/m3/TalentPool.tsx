@@ -62,7 +62,6 @@ export function TalentPool({ proposals, statusForCandidate, onOpenCandidate, onG
         onOpenWorkspace={() => proposals[0] && onOpenCandidate(proposals[0].id)}
         actions={[
           { label: 'All candidates', icon: 'groups', onClick: () => onGoTo ? onGoTo('audit') : undefined },
-          { label: 'Decisions', icon: 'gavel', onClick: () => onGoTo ? onGoTo('decisions') : undefined },
           { label: 'RAG rules', icon: 'policy', onClick: () => onGoTo ? onGoTo('corpus') : undefined },
         ]}
       />

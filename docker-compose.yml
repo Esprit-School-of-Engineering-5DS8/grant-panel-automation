@@ -16,6 +16,9 @@ services:
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      # The exported workflows use $env.GRANT_PANEL_API_BASE_URL so the API
+      # host can be changed without editing workflow JSON.
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data:/data

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import './index.css'
 import CvVisionPanel from './components/CvVisionPanel'
 import VideoPanel from './components/VideoPanel'
@@ -7,10 +7,8 @@ import { Dashboard } from './m3/Dashboard'
 import { TalentPool } from './m3/TalentPool'
 import { AllCandidates } from './m3/AllCandidates'
 import { HeroCard } from './m3/HeroCard'
-import { DecisionsTab } from './components/DecisionsTab'
 import { SettingsTab } from './components/SettingsTab'
 import { CorpusTab } from './components/CorpusTab'
-import { ArbitrationTab } from './components/ArbitrationTab'
 import { N8nTab } from './components/N8nTab'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
@@ -26,6 +24,8 @@ interface Application {
   major: string
   gpa: number
   requested_grant: number
+  funding_type?: string
+  funding_program?: string
   page_count: number
   pdf_url?: string
   ground_truth?: any
@@ -68,7 +68,7 @@ interface CorpusDoc {
 
 interface EducationEntry { institution: string; degree: string; field: string; year: string; gpa: string }
 
-const FALLBACK_EDUCATION: EducationEntry = { institution: 'Yale College / Morse College', degree: 'B.S. · Computer Science & Global Affairs', field: 'Computer Science & Global Affairs', year: '2027', gpa: '3.92' }
+const FALLBACK_EDUCATION: EducationEntry = { institution: 'Yale College / Morse College', degree: 'B.S. Â· Computer Science & Global Affairs', field: 'Computer Science & Global Affairs', year: '2027', gpa: '3.92' }
 const isEducationEntry = (value: unknown): value is EducationEntry => Boolean(value && typeof value === 'object' && ['institution', 'degree', 'field', 'year', 'gpa'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string'))
 const normalizeEducationEntries = (value: unknown): EducationEntry[] => Array.isArray(value) && value.length > 0 && value.every(isEducationEntry) ? value : [FALLBACK_EDUCATION]
 const normalizeExperienceEntries = (value: unknown, fallback: string): string[] => Array.isArray(value) && value.every((item) => typeof item === 'string') && value.length > 0 ? value : [fallback]
@@ -106,7 +106,13 @@ export function App() {
   // Top-Level Portal Mode: Student Portal vs. Committee Admin Console
   const [portalMode, setPortalMode] = useState<'student' | 'admin'>(() => readStoredJson<{ email: string } | null>('openDoorsAdminSession', null) ? 'admin' : 'student')
   const [applicantSession, setApplicantSession] = useState<{ email: string; name: string } | null>(() => readStoredJson<{ email: string; name: string } | null>('openDoorsApplicantSession', null))
-  const [adminSession, setAdminSession] = useState<{ email: string } | null>(() => readStoredJson<{ email: string } | null>('openDoorsAdminSession', null))
+  const [adminSession, setAdminSession] = useState<{ email: string; name?: string; avatar?: string } | null>(() => readStoredJson<{ email: string; name?: string; avatar?: string } | null>('openDoorsAdminSession', null))
+  const adminProfile = { name: adminSession?.name || 'Committee Admin', email: adminSession?.email || 'admin@opendoors.org', avatar: adminSession?.avatar || 'CA' }
+  const saveAdminProfile = (profile: { name: string; email: string; avatar: string; password?: string }) => {
+    const next = { email: profile.email, name: profile.name, avatar: profile.avatar }
+    setAdminSession(next)
+    localStorage.setItem('openDoorsAdminSession', JSON.stringify(next))
+  }
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin')
   const [authEmail, setAuthEmail] = useState('')
 
@@ -115,11 +121,12 @@ export function App() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [authFieldErrors, setAuthFieldErrors] = useState<Record<string, string>>({})
   const [applicantView, setApplicantView] = useState<'status' | 'workspace'>('status')
+  const [routeReady, setRouteReady] = useState(false)
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<string>('')
   const [applicationStatus, setApplicationStatus] = useState<'draft' | 'submitting' | 'submitted' | 'failed'>('draft')
 
   // Committee Admin Tabs
-  const [adminTab, setAdminTab] = useState<'overview' | 'audit' | 'fellowships' | 'scholarships' | 'decisions' | 'corpus' | 'settings' | 'n8n' | 'dossiers' | 'compliance' | 'multimodal' | 'deliberation' | 'arbitration'>('overview')
+  const [adminTab, setAdminTab] = useState<'overview' | 'audit' | 'fellowships' | 'scholarships' | 'corpus' | 'settings' | 'n8n' | 'dossiers' | 'compliance' | 'multimodal' | 'deliberation'>('overview')
   const [candidatesNavOpen, setCandidatesNavOpen] = useState(true)
   const [drawerCollapsed, setDrawerCollapsed] = useState<boolean>(() => readStoredJson<boolean>('openDoorsDrawerCollapsed', false))
   const toggleDrawer = () => setDrawerCollapsed(prev => {
@@ -130,6 +137,7 @@ export function App() {
   const [candidateView, setCandidateView] = useState<'all' | 'application' | 'audit' | 'pools' | 'searches'>('all')
   const [n8nTriggerLoading, setN8nTriggerLoading] = useState(false)
   const [n8nTriggerResult, setN8nTriggerResult] = useState<any>(null)
+  const [n8nHealth, setN8nHealth] = useState<any>(null)
 
   const [proposals, setProposals] = useState<Application[]>([])
   const [selectedProposal, setSelectedProposal] = useState<Application | null>(null)
@@ -149,7 +157,7 @@ export function App() {
   const [auditNotes, setAuditNotes] = useState('')
   const [overallOpinion, setOverallOpinion] = useState<Record<string, string>>({})
   const [opinionLoading, setOpinionLoading] = useState<Record<string, boolean>>({})
-  const [pdfViewMode, setPdfViewMode] = useState<boolean>(false)
+  const [pdfViewMode, setPdfViewMode] = useState<boolean>(true)
 
   // Student Form State
   const [studentName, setStudentName] = useState('')
@@ -157,6 +165,8 @@ export function App() {
   const [studentMajor, setStudentMajor] = useState('')
   const [studentGpa, setStudentGpa] = useState<number>(0)
   const [projectTitle, setProjectTitle] = useState('')
+  const [fundingType, setFundingType] = useState<'fellowship' | 'scholarship' | 'other'>('fellowship')
+  const [fundingProgram, setFundingProgram] = useState('')
   const [requestedGrant, setRequestedGrant] = useState<number>(0)
   const [parentIncome, setParentIncome] = useState<number>(0)
   const [outsideScholarships, setOutsideScholarships] = useState<number>(0)
@@ -311,6 +321,9 @@ export function App() {
           }
         })
       }
+
+      if (!fundingProgram.trim()) errors.fundingProgram = 'Please select the Yale scholarship or fellowship you are applying for.'
+      if (!Number.isFinite(Number(requestedGrant)) || Number(requestedGrant) <= 0) errors.requestedGrant = 'Please enter the amount you are requesting.'
     }
 
     if (targetStep === 3) {
@@ -349,7 +362,7 @@ export function App() {
 
   const continueStudentStep = () => {
     if (applicationStatus === 'submitted') {
-      setSubmitStatus('Thank you — your application was already submitted successfully. There is no need to resubmit.')
+      setSubmitStatus('Thank you â€” your application was already submitted successfully. There is no need to resubmit.')
       setApplicantView('status')
       return
     }
@@ -385,12 +398,6 @@ export function App() {
 
   // Chair HITL form states
   const [overrideScore, setOverrideScore] = useState<number>(4.6)
-  const [overrideDecision, setOverrideDecision] = useState<'FUND' | 'RESERVE' | 'REJECT'>('FUND')
-  const [overrideNotes, setOverrideNotes] = useState<string>(
-    'Official Yale Fellowship Committee Decision: High intellectual merit, strong demonstrated public purpose, and compliant financial need.'
-  )
-  const [isSignedOff, setIsSignedOff] = useState<boolean>(false)
-  const [signOffTimestamp, setSignOffTimestamp] = useState<string>('')
 
   const resetStudentFormState = (name = '', email = '') => {
     setStudentStep(0)
@@ -404,6 +411,8 @@ export function App() {
     setStudentMajor('')
     setStudentGpa(0)
     setProjectTitle('')
+    setFundingType('fellowship')
+    setFundingProgram('')
     setRequestedGrant(0)
     setParentIncome(0)
     setOutsideScholarships(0)
@@ -453,6 +462,8 @@ export function App() {
       setStudentMajor(userDraft.studentMajor || '')
       setStudentGpa(userDraft.studentGpa || 0)
       setProjectTitle(userDraft.projectTitle || '')
+      setFundingType(userDraft.fundingType || 'fellowship')
+      setFundingProgram(userDraft.fundingProgram || '')
       setPurposeStatement(userDraft.purposeStatement || '')
       setStudyPlan(userDraft.studyPlan || '')
       setLeadershipStatement(userDraft.leadershipStatement || '')
@@ -493,6 +504,37 @@ export function App() {
   }, [])
 
   useEffect(() => { if (adminSession) localStorage.setItem('openDoorsAdminSession', JSON.stringify(adminSession)) }, [adminSession])
+  useEffect(() => {
+    if (portalMode !== 'admin') return
+    let cancelled = false
+    fetch(apiUrl('/api/integrations/health'))
+      .then((response) => response.json())
+      .then((payload) => { if (!cancelled) setN8nHealth(payload) })
+      .catch(() => { if (!cancelled) setN8nHealth({ api: 'unavailable', n8n: 'unavailable', detail: 'API health check failed.' }) })
+    return () => { cancelled = true }
+  }, [portalMode])
+  useEffect(() => {
+    const applyRoute = () => {
+      const path = window.location.pathname
+      if (path === '/signin' || path === '/signup') { setPortalMode('student'); setAuthView(path.slice(1) as 'signin' | 'signup') }
+      else if (path.startsWith('/admin')) { setPortalMode('admin'); const match = path.match(/^\/admin\/([^/]+)/); const tab = match?.[1]; if (tab === 'settings' || tab === 'rag-rules' || tab === 'decisions' || tab === 'candidates') setAdminTab(tab === 'rag-rules' ? 'corpus' : tab === 'candidates' ? 'audit' : tab as any) }
+      else if (path === '/applicant/application') { setPortalMode('student'); setApplicantView('workspace') }
+      else if (path === '/applicant/status' || path === '/') { setPortalMode('student'); setApplicantView('status') }
+      setRouteReady(true)
+    }
+    applyRoute()
+    window.addEventListener('popstate', applyRoute)
+    return () => window.removeEventListener('popstate', applyRoute)
+  }, [])
+  useEffect(() => {
+    if (!routeReady) return
+    const path = portalMode === 'admin'
+      ? `/admin/${adminTab === 'corpus' ? 'rag-rules' : adminTab}`
+      : !applicantSession
+        ? `/${authView}`
+        : applicantView === 'workspace' ? '/applicant/application' : '/applicant/status'
+    if (window.location.pathname !== path) window.history.pushState({}, '', path)
+  }, [routeReady, portalMode, adminTab, applicantView, applicantSession, authView])
   useEffect(() => { localStorage.setItem('openDoorsCandidateStatuses', JSON.stringify(candidateAuditStatus)) }, [candidateAuditStatus])
   useEffect(() => { const decision = decisionForCandidate(selectedProposal || undefined); setAuditDecision(decision?.decision || 'FUND'); setAuditNotes(decision?.notes || ''); setOverrideScore(decision?.score || 4.6) }, [selectedProposal, candidateDecisions])
   useEffect(() => {
@@ -547,7 +589,7 @@ export function App() {
     const stamp = new Date().toISOString()
     const draft = {
       studentStep, completedStudentSteps, educationEntries, academicExperiences, leadershipExperiences,
-      studentName, studentSchool, studentMajor, studentGpa, projectTitle,
+      studentName, studentSchool, studentMajor, studentGpa, projectTitle, fundingType, fundingProgram,
       purposeStatement: academicExperiences[0] || purposeStatement,
       studyPlan,
       leadershipStatement: leadershipExperiences[0] || leadershipStatement,
@@ -743,7 +785,7 @@ export function App() {
 
   const currentAudit = auditCandidate ? candidateAuditRuns[auditCandidate.id] : undefined
   const auditTokenUsage = currentAudit?.token_usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-  const auditTokenLabel = `${Number(auditTokenUsage.total_tokens || 0).toLocaleString()} tokens · ${Number(auditTokenUsage.prompt_tokens || 0).toLocaleString()} in / ${Number(auditTokenUsage.completion_tokens || 0).toLocaleString()} out`
+  const auditTokenLabel = `${Number(auditTokenUsage.total_tokens || 0).toLocaleString()} tokens Â· ${Number(auditTokenUsage.prompt_tokens || 0).toLocaleString()} in / ${Number(auditTokenUsage.completion_tokens || 0).toLocaleString()} out`
 
   const pipelineStageRows = [
     ['cv_ocr', 'CV parsing'],
@@ -758,8 +800,6 @@ export function App() {
   const updateAuditArtifact = (key: string, value: any) => setAuditArtifacts(current => ({ ...current, [key]: { ...value, updatedAt: new Date().toISOString() } }))
   const statusForCandidate = (candidate: Application | undefined) => candidate ? (candidateAuditStatus[candidate.id] || 'Needs review') : 'Needs review'
   const decisionForCandidate = (candidate: Application | undefined) => candidate ? candidateDecisions[candidate.id] : undefined
-  const statusClass = (status: string) => ({ 'Needs review': 'status-needs-review', 'In review': 'status-in-review', Verified: 'status-verified', 'Decision needed': 'status-decision-needed', Submitted: 'status-submitted' }[status] || 'status-needs-review')
-  const recommendationClass = (decision?: string) => ({ FUND: 'recommendation-fund', RESERVE: 'recommendation-reserve', REJECT: 'recommendation-reject', Pending: 'recommendation-pending' }[decision || 'Pending'] || 'recommendation-pending')
   const runFullAudit = async (targetCandidate?: Application) => {
     const candidate = targetCandidate || auditCandidate
     if (!candidate) return
@@ -771,7 +811,6 @@ export function App() {
     setAuditArtifacts(current => { const next = { ...current }; delete next[id]; return next })
     setVideoStages(current => { const next = { ...current }; delete next[id]; return next })
     setOverallOpinion(current => { const next = { ...current }; delete next[id]; return next })
-    setIsSignedOff(false)
     await fetch(apiUrl(`/api/admin/candidate-audit/${encodeURIComponent(id)}/run`), { method: 'POST' })
   }
   const stopFullAudit = async (targetCandidate?: Application) => {
@@ -822,7 +861,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (applicationStatus === 'submitted') {
-      setSubmitStatus('Thank you — your application was already submitted successfully. There is no need to resubmit.')
+      setSubmitStatus('Thank you â€” your application was already submitted successfully. There is no need to resubmit.')
       setApplicantView('status')
       return
     }
@@ -847,6 +886,8 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
       leadership_statement: leadershipExperiences[0]?.trim() || leadershipStatement.trim() || 'Leadership experience and community service on file.',
       page_count: 8,
       requested_grant: Number(requestedGrant) || 0.0,
+      funding_type: fundingType,
+      funding_program: fundingProgram,
       cv_latex: studentCvLatex,
       cv_filename: cvFileName,
       video_url: recordedVideoUrl,
@@ -870,7 +911,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
         scientific_methodology: studyPlan.trim() || 'Full academic curriculum and methodology on file.',
         impact_and_dissemination: leadershipExperiences[0] || leadershipStatement || 'Leadership and community contribution plan on file.',
         work_packages: 'Term 1: Methodology. Term 2: Research & Fieldwork. Term 3: Thesis.',
-        budget: `Direct need-based request: $${(Number(requestedGrant) || 0).toLocaleString()}. Parent share and standard student share accounted for.`
+        budget: `${fundingType} â€” ${fundingProgram}. Direct request: $${(Number(requestedGrant) || 0).toLocaleString()}. Parent share and standard student share accounted for.`
       },
     }
 
@@ -907,7 +948,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
         setApplicationStatus('submitted')
         localStorage.setItem(getUserStatusKey(userEmail), 'submitted')
         localStorage.setItem(getUserSubmittedAtKey(userEmail), submittedAt)
-        setSubmitStatus(`✅ Thank you! Your application [${result.application?.id || 'new'}] was submitted successfully. No further action is required.`)
+        setSubmitStatus(`âœ… Thank you! Your application [${result.application?.id || 'new'}] was submitted successfully. No further action is required.`)
         setApplicantView('status')
         await fetchProposals()
         if (result.application) setSelectedProposal(result.application)
@@ -1015,7 +1056,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
     setActiveVideoModal('none')
     e.target.value = ''
 
-    // Read duration with a temp element — ref may not be mounted yet
+    // Read duration with a temp element â€” ref may not be mounted yet
     const dur = await readVideoDuration(objectUrl)
     setVideoDuration(dur)
     setVideoError(getVideoValidationMessage(dur))
@@ -1113,14 +1154,9 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
   const expectedEfc = simParentShare + simStudentShare
   const computedNeed = Math.max(0, simCostOfAttendance - expectedEfc - simOutsideAwards + simComputerAllowance)
 
-  const sortedCohort = [...proposals].sort((a, b) => {
-    const sA = a.ground_truth?.consensus_score || 3.5
-    const sB = b.ground_truth?.consensus_score || 3.5
-    return sB - sA
-  })
   const savedLabel = draftUpdatedAt ? `Last saved ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(draftUpdatedAt))}` : 'No saved draft yet'
   const submittedAtValue = applicantSession?.email ? localStorage.getItem(getUserSubmittedAtKey(applicantSession.email)) : null
-  const submissionLabel = applicationStatus === 'submitted' ? `Submitted ${submittedAtValue ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(submittedAtValue)) : ''}` : applicationStatus === 'submitting' ? 'Submission in progress' : applicationStatus === 'failed' ? 'Submission needs attention' : 'Draft · Not submitted'
+  const submissionLabel = applicationStatus === 'submitted' ? `Submitted ${submittedAtValue ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(submittedAtValue)) : ''}` : applicationStatus === 'submitting' ? 'Submission in progress' : applicationStatus === 'failed' ? 'Submission needs attention' : 'Draft Â· Not submitted'
   const applicantDisplayName = applicantSession?.name || studentName || authName || 'Applicant'
   const applicantInitials = applicantDisplayName
     .split(/\s+/)
@@ -1258,11 +1294,11 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
     setAuthFieldErrors({})
   }
 
-  if (portalMode === 'admin' && !adminSession) return <div className="auth-page admin-auth-page"><div className="auth-panel"><div className="portal-brand"><div className="brand-mark">OD</div><div><strong>Open Doors</strong><span>Committee portal</span></div></div><span className="eyebrow">Secure workspace</span><h1>Welcome back, committee.</h1><p className="auth-lede">Sign in to review applicant dossiers, compliance, and committee decisions.</p><label className="field"><span>Admin email</span><input type="email" placeholder="admin@opendoors.org" value={authEmail} onChange={e => { setAuthEmail(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.email; return n }) }} />{authFieldErrors.email && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.email}</span>}</label><label className="field"><span>Password</span><input type="password" placeholder="Admin password" value={authPassword} onChange={e => { setAuthPassword(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.password; return n }) }} />{authFieldErrors.password && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.password}</span>}</label>{authError && <div className="auth-error">{authError}</div>}<button className="primary-button auth-submit" onClick={() => signInAdmin()}>Sign in to admin console <span className="material-symbols-outlined">arrow_forward</span></button><button className="demo-link" onClick={() => signInAdmin(true)}>Continue as demo admin</button><button className="back-to-app" onClick={() => { setPortalMode('student'); setAuthError(null); setAuthFieldErrors({}) }}>← Back to applicant portal</button></div></div>
+  if (portalMode === 'admin' && !adminSession) return <div className="auth-page admin-auth-page"><div className="auth-panel"><div className="portal-brand"><div className="brand-mark">OD</div><div><strong>Open Doors</strong><span>Committee portal</span></div></div><span className="eyebrow">Secure workspace</span><h1>Welcome back, committee.</h1><p className="auth-lede">Sign in to review applicant dossiers, compliance, and committee decisions.</p><label className="field"><span>Admin email</span><input type="email" placeholder="admin@opendoors.org" value={authEmail} onChange={e => { setAuthEmail(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.email; return n }) }} />{authFieldErrors.email && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.email}</span>}</label><label className="field"><span>Password</span><input type="password" placeholder="Admin password" value={authPassword} onChange={e => { setAuthPassword(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.password; return n }) }} />{authFieldErrors.password && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.password}</span>}</label>{authError && <div className="auth-error">{authError}</div>}<button className="primary-button auth-submit" onClick={() => signInAdmin()}>Sign in to admin console <span className="material-symbols-outlined">arrow_forward</span></button><button className="demo-link" onClick={() => signInAdmin(true)}>Continue as demo admin</button><button className="back-to-app" onClick={() => { setPortalMode('student'); setAuthError(null); setAuthFieldErrors({}) }}>â† Back to applicant portal</button></div></div>
 
-  if (portalMode === 'student' && !applicantSession) return <div className="auth-page"><div className="auth-visual"><div className="auth-visual-slides" aria-hidden="true"><span style={{ backgroundImage: "url('/yale-bg-1.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-2.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-3.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-4.svg')" }} /></div><div className="auth-visual-scrim" aria-hidden="true" /><div className="portal-brand"><div className="brand-mark brand-mark-yale"><img src="/yale-shield.svg" alt="Yale University" /></div><div><strong>Yale University</strong><span>Applicant portal</span></div></div><div className="auth-quote"><span className="eyebrow">Application 2026</span><h1>Your story deserves room to move.</h1><p>Build a thoughtful application, one piece at a time.</p><div className="quote-mark">“</div></div><div className="auth-visual-foot">Yale University · Fellowship &amp; scholarship support</div></div><div className="auth-panel"><div className="auth-tabs"><button className={authView === 'signin' ? 'active' : ''} onClick={() => { setAuthView('signin'); setAuthError(null); setAuthFieldErrors({}) }}>Sign in</button><button className={authView === 'signup' ? 'active' : ''} onClick={() => { setAuthView('signup'); setAuthError(null); setAuthFieldErrors({}) }}>Create account</button></div><span className="eyebrow">Applicant access</span><h1>{authView === 'signin' ? 'Welcome back.' : 'Start your application.'}</h1><p className="auth-lede">{authView === 'signin' ? 'Pick up where you left off, whenever you’re ready.' : 'Create a local applicant account to save your progress on this device.'}</p>{authView === 'signup' && <label className="field"><span>Full name</span><input placeholder="e.g. Alex Rivera" value={authName} onChange={e => { setAuthName(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.name; return n }) }} />{authFieldErrors.name && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.name}</span>}</label>}<label className="field"><span>Email address</span><input type="email" placeholder="e.g. applicant@university.edu" value={authEmail} onChange={e => { setAuthEmail(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.email; return n }) }} />{authFieldErrors.email && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.email}</span>}</label><label className="field"><span>Password</span><input type="password" placeholder={authView === 'signup' ? 'At least 6 characters' : 'Enter your password'} value={authPassword} onChange={e => { setAuthPassword(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.password; return n }) }} />{authFieldErrors.password && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.password}</span>}</label>{authError && <div className="auth-error">{authError}</div>}<button className="primary-button auth-submit" onClick={() => authView === 'signin' ? signInApplicant() : signUpApplicant()}>{authView === 'signin' ? 'Sign in' : 'Create local account'} <span className="material-symbols-outlined">arrow_forward</span></button><div className="auth-divider"><span>or</span></div><button className="demo-link" onClick={() => signInApplicant(true)}>Continue as demo applicant</button><button className="admin-entry" onClick={() => { setPortalMode('admin'); setAuthError(null); setAuthFieldErrors({}) }}>Committee / admin sign in</button></div></div>
+  if (portalMode === 'student' && !applicantSession) return <div className="auth-page"><div className="auth-visual"><div className="auth-visual-slides" aria-hidden="true"><span style={{ backgroundImage: "url('/yale-bg-1.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-2.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-3.svg')" }} /><span style={{ backgroundImage: "url('/yale-bg-4.svg')" }} /></div><div className="auth-visual-scrim" aria-hidden="true" /><div className="portal-brand"><div className="brand-mark brand-mark-yale"><img src="/yale-shield.svg" alt="Yale University" /></div><div><strong>Yale University</strong><span>Applicant portal</span></div></div><div className="auth-quote"><span className="eyebrow">Application 2026</span><h1>Your story deserves room to move.</h1><p>Build a thoughtful application, one piece at a time.</p><div className="quote-mark">â€œ</div></div><div className="auth-visual-foot">Yale University Â· Fellowship &amp; scholarship support</div></div><div className="auth-panel"><div className="auth-tabs"><button className={authView === 'signin' ? 'active' : ''} onClick={() => { setAuthView('signin'); setAuthError(null); setAuthFieldErrors({}) }}>Sign in</button><button className={authView === 'signup' ? 'active' : ''} onClick={() => { setAuthView('signup'); setAuthError(null); setAuthFieldErrors({}) }}>Create account</button></div><span className="eyebrow">Applicant access</span><h1>{authView === 'signin' ? 'Welcome back.' : 'Start your application.'}</h1><p className="auth-lede">{authView === 'signin' ? 'Pick up where you left off, whenever youâ€™re ready.' : 'Create a local applicant account to save your progress on this device.'}</p>{authView === 'signup' && <label className="field"><span>Full name</span><input placeholder="e.g. Alex Rivera" value={authName} onChange={e => { setAuthName(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.name; return n }) }} />{authFieldErrors.name && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.name}</span>}</label>}<label className="field"><span>Email address</span><input type="email" placeholder="e.g. applicant@university.edu" value={authEmail} onChange={e => { setAuthEmail(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.email; return n }) }} />{authFieldErrors.email && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.email}</span>}</label><label className="field"><span>Password</span><input type="password" placeholder={authView === 'signup' ? 'At least 6 characters' : 'Enter your password'} value={authPassword} onChange={e => { setAuthPassword(e.target.value); setAuthFieldErrors(prev => { const n = { ...prev }; delete n.password; return n }) }} />{authFieldErrors.password && <span className="field-error"><span className="material-symbols-outlined">error</span>{authFieldErrors.password}</span>}</label>{authError && <div className="auth-error">{authError}</div>}<button className="primary-button auth-submit" onClick={() => authView === 'signin' ? signInApplicant() : signUpApplicant()}>{authView === 'signin' ? 'Sign in' : 'Create local account'} <span className="material-symbols-outlined">arrow_forward</span></button><div className="auth-divider"><span>or</span></div><button className="demo-link" onClick={() => signInApplicant(true)}>Continue as demo applicant</button><button className="admin-entry" onClick={() => { setPortalMode('admin'); setAuthError(null); setAuthFieldErrors({}) }}>Committee / admin sign in</button></div></div>
 
-  if (portalMode === 'student' && applicantSession && applicantView === 'status') return <div className="status-page"><header className="status-header"><div className="portal-brand"><div className="brand-mark">OD</div><div><strong>Open Doors</strong><span>Applicant portal</span></div></div><div className="status-user"><span className="avatar">{applicantInitials}</span><span><strong>{applicantDisplayName}</strong><small style={{ display: 'block', color: 'var(--muted)', fontSize: '.65rem', marginTop: 2 }}>{applicantSession.email}</small></span><button onClick={signOutApplicant}>Sign out</button></div></header><main className="status-main"><span className="eyebrow">My application · 2026</span><h1>Good to see you, {applicantDisplayName.split(' ')[0]}.</h1>{applicationStatus === 'submitted' ? <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}><span className="material-symbols-outlined" style={{ fontSize: 24 }}>check_circle</span><div><strong style={{ display: 'block' }}>Thank you — your application was submitted successfully.</strong><small style={{ opacity: 0.9 }}>No need to resubmit. You can review your status below.</small></div></div> : <p className="auth-lede">Your application is saved securely on this device. Continue when you’re ready.</p>}<section className="status-hero"><div><span className="eyebrow">Current stage</span><h2>{applicationStatus === 'submitted' ? 'Application received' : completedStudentSteps.length ? studentSteps[Math.min(studentStep, 5)] : 'General information'}</h2><p>{savedLabel} · {submissionLabel}</p></div><div className="status-ring"><strong>{applicationStatus === 'submitted' ? 100 : Math.round((completedStudentSteps.length / 6) * 100)}%</strong><span>{applicationStatus === 'submitted' ? 'submitted' : 'complete'}</span></div></section><section className="status-card"><div className="status-card-top"><div><h3>Application progress</h3><p>Six pieces make up your dossier.</p></div><strong>{applicationStatus === 'submitted' ? 'Submitted' : `${completedStudentSteps.length} of 6 complete`}</strong></div><div className="status-progress"><i style={{ width: `${applicationStatus === 'submitted' ? 100 : (completedStudentSteps.length / 6) * 100}%` }} /></div><div className="status-step-list">{studentSteps.map((step, index) => <div key={step} className={applicationStatus === 'submitted' || completedStudentSteps.includes(index) ? 'complete' : index === studentStep ? 'current' : ''}><span className="material-symbols-outlined">{applicationStatus === 'submitted' || completedStudentSteps.includes(index) ? 'check_circle' : stepIcons[index]}</span><span>{step}</span><small>{applicationStatus === 'submitted' ? 'Complete' : completedStudentSteps.includes(index) ? 'Complete' : index === studentStep ? 'Up next' : 'Not started'}</small></div>)}</div><button className="primary-button" onClick={() => setApplicantView('workspace')}>{applicationStatus === 'submitted' ? 'View submitted application' : 'Continue application'} <span className="material-symbols-outlined">arrow_forward</span></button></section></main></div>
+  if (portalMode === 'student' && applicantSession && applicantView === 'status') return <div className="status-page"><header className="status-header"><div className="portal-brand"><div className="brand-mark">OD</div><div><strong>Open Doors</strong><span>Applicant portal</span></div></div><div className="status-user"><span className="avatar">{applicantInitials}</span><span><strong>{applicantDisplayName}</strong><small style={{ display: 'block', color: 'var(--muted)', fontSize: '.65rem', marginTop: 2 }}>{applicantSession.email}</small></span><button onClick={signOutApplicant}>Sign out</button></div></header><main className="status-main"><span className="eyebrow">My application Â· 2026</span><h1>Good to see you, {applicantDisplayName.split(' ')[0]}.</h1>{applicationStatus === 'submitted' ? <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}><span className="material-symbols-outlined" style={{ fontSize: 24 }}>check_circle</span><div><strong style={{ display: 'block' }}>Thank you â€” your application was submitted successfully.</strong><small style={{ opacity: 0.9 }}>No need to resubmit. You can review your status below.</small></div></div> : <p className="auth-lede">Your application is saved securely on this device. Continue when youâ€™re ready.</p>}<section className="status-hero"><div><span className="eyebrow">Current stage</span><h2>{applicationStatus === 'submitted' ? 'Application received' : completedStudentSteps.length ? studentSteps[Math.min(studentStep, 5)] : 'General information'}</h2><p>{savedLabel} Â· {submissionLabel}</p></div><div className="status-ring"><strong>{applicationStatus === 'submitted' ? 100 : Math.round((completedStudentSteps.length / 6) * 100)}%</strong><span>{applicationStatus === 'submitted' ? 'submitted' : 'complete'}</span></div></section><section className="status-card"><div className="status-card-top"><div><h3>Application progress</h3><p>Six pieces make up your dossier.</p></div><strong>{applicationStatus === 'submitted' ? 'Submitted' : `${completedStudentSteps.length} of 6 complete`}</strong></div><div className="status-progress"><i style={{ width: `${applicationStatus === 'submitted' ? 100 : (completedStudentSteps.length / 6) * 100}%` }} /></div><div className="status-step-list">{studentSteps.map((step, index) => <div key={step} className={applicationStatus === 'submitted' || completedStudentSteps.includes(index) ? 'complete' : index === studentStep ? 'current' : ''}><span className="material-symbols-outlined">{applicationStatus === 'submitted' || completedStudentSteps.includes(index) ? 'check_circle' : stepIcons[index]}</span><span>{step}</span><small>{applicationStatus === 'submitted' ? 'Complete' : completedStudentSteps.includes(index) ? 'Complete' : index === studentStep ? 'Up next' : 'Not started'}</small></div>)}</div><button className="primary-button" onClick={() => setApplicantView('workspace')}>{applicationStatus === 'submitted' ? 'View submitted application' : 'Continue application'} <span className="material-symbols-outlined">arrow_forward</span></button></section></main></div>
 
   return (
     <div className={`m3-app-layout ${portalMode === 'student' ? 'student-mode' : 'admin-mode'}`}>
@@ -1383,8 +1419,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
             </div>
             <div className={`m3-nav-item ${adminTab === 'corpus' ? 'active' : ''}`} title="Rules" onClick={() => setAdminTab('corpus')}><span className="material-symbols-outlined">hub</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Rules</div></div></div>
             <div className={`m3-nav-item ${adminTab === 'settings' ? 'active' : ''}`} title="Settings" onClick={() => setAdminTab('settings')}><span className="material-symbols-outlined">settings</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Settings</div></div></div>
-            <div className={`m3-nav-item ${adminTab === 'decisions' ? 'active' : ''}`} title="Decisions" onClick={() => setAdminTab('decisions')}><span className="material-symbols-outlined">gavel</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Decisions</div></div></div>
-            <div className={`m3-nav-item ${adminTab === 'arbitration' ? 'active' : ''}`} title="Chair Arbitration" onClick={() => setAdminTab('arbitration')}><span className="material-symbols-outlined">verified</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Chair Arbitration</div></div></div>
             <div className={`m3-nav-item ${adminTab === 'n8n' ? 'active' : ''}`} title="n8n Pipeline" onClick={() => setAdminTab('n8n')}><span className="material-symbols-outlined" style={{ color: '#f59e0b' }}>hub</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>n8n Pipeline</div></div></div>
           </nav>
 
@@ -1422,7 +1456,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
         {/* ============================================================= */}
         {portalMode === 'student' && (
           <div className="student-shell">
-            <div className="student-mobile-progress"><div><span>Step {studentStep + 1} of 6</span><span className="mobile-saved"><i className="status-dot" /> Saved just now</span></div><strong>{studentSteps[studentStep]}</strong><div className="mobile-context"><span className="avatar">{applicantInitials}</span> {applicantDisplayName} · Applicant</div><div className="progress-track"><i style={{ width: `${((studentStep + 1) / 6) * 100}%` }} /></div></div>
+            <div className="student-mobile-progress"><div><span>Step {studentStep + 1} of 6</span><span className="mobile-saved"><i className="status-dot" /> Saved just now</span></div><strong>{studentSteps[studentStep]}</strong><div className="mobile-context"><span className="avatar">{applicantInitials}</span> {applicantDisplayName} Â· Applicant</div><div className="progress-track"><i style={{ width: `${((studentStep + 1) / 6) * 100}%` }} /></div></div>
             <div className="student-intro"><div><span className="eyebrow">Application 2026</span><h1>Your story, in six pieces.</h1><p>Build your dossier at your own pace. Everything is saved as you go.</p></div><div className="save-state"><span className="status-dot" /> Saved just now</div></div>
             <div className="student-layout">
               <aside className="student-rail">
@@ -1440,7 +1474,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 <div className="canvas-top"><div><span className="eyebrow">Section 0{studentStep + 1}</span><h2>{studentSteps[studentStep]}</h2></div><div className="profile-chip" onClick={signOutApplicant} title="Click to sign out"><span className="avatar">{applicantInitials}</span><span><strong>{applicantDisplayName}</strong><small>{applicantSession?.email || 'Applicant'} (Sign out)</small></span><span className="material-symbols-outlined">logout</span></div></div>
                 {submitStatus && <div className="student-alert"><span className="material-symbols-outlined">info</span>{submitStatus}</div>}
                 <div className="dossier-card">
-                  {studentStep === 0 && <><div className="card-heading"><span className="section-number">01</span><div><h3>Let’s start with you</h3><p>Tell us how to reach you and how you’d like your name represented.</p></div></div><div className="form-grid">
+                  {studentStep === 0 && <><div className="card-heading"><span className="section-number">01</span><div><h3>Letâ€™s start with you</h3><p>Tell us how to reach you and how youâ€™d like your name represented.</p></div></div><div className="form-grid">
                     <label className={`field wide ${formErrors.studentName ? 'has-error' : ''}`}>
                       <span>Full legal name <b>*</b></span>
                       <input
@@ -1601,6 +1635,44 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                       {formErrors.projectTitle && <span className="field-error"><span className="material-symbols-outlined">error</span>{formErrors.projectTitle}</span>}
                     </label>
 
+                    <div className="form-grid funding-selection">
+                      <label className="field">
+                        <span>Yale funding type <b>*</b></span>
+                        <select value={fundingType} onChange={e => { setFundingType(e.target.value as 'fellowship' | 'scholarship' | 'other'); setFundingProgram('') }}>
+                          <option value="fellowship">Fellowship</option>
+                          <option value="scholarship">Scholarship</option>
+                          <option value="other">Other Yale funding</option>
+                        </select>
+                      </label>
+                      <label className={`field ${formErrors.fundingProgram ? 'has-error' : ''}`}>
+                        <span>Yale opportunity <b>*</b></span>
+                        <select value={fundingProgram} onChange={e => { setFundingProgram(e.target.value); clearFieldError('fundingProgram') }}>
+                          <option value="">Select an opportunity</option>
+                          {fundingType === 'fellowship' && <>
+                            <option>Yale Graduate Fellowship</option>
+                            <option>Yale Research Fellowship</option>
+                            <option>Yale Public Service Fellowship</option>
+                          </>}
+                          {fundingType === 'scholarship' && <>
+                            <option>Yale Need-Based Scholarship</option>
+                            <option>Yale Merit Scholarship</option>
+                            <option>Yale International Student Scholarship</option>
+                          </>}
+                          {fundingType === 'other' && <option>Other Yale funding programme</option>}
+                        </select>
+                        {formErrors.fundingProgram && <span className="field-error"><span className="material-symbols-outlined">error</span>{formErrors.fundingProgram}</span>}
+                      </label>
+                      <label className={`field ${formErrors.requestedGrant ? 'has-error' : ''}`}>
+                        <span>Requested budget (USD) <b>*</b></span>
+                        <input type="number" min="1" step="100" value={requestedGrant || ''} onChange={e => { setRequestedGrant(Number(e.target.value)); clearFieldError('requestedGrant') }} placeholder="e.g. 75000" />
+                        {formErrors.requestedGrant && <span className="field-error"><span className="material-symbols-outlined">error</span>{formErrors.requestedGrant}</span>}
+                      </label>
+                      <label className="field">
+                        <span>Outside scholarships / awards (USD)</span>
+                        <input type="number" min="0" step="100" value={outsideScholarships || ''} onChange={e => setOutsideScholarships(Number(e.target.value))} placeholder="0" />
+                      </label>
+                    </div>
+
                     <div className="experience-group">
                       <div className="experience-group-heading">
                         <div>
@@ -1674,7 +1746,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                     <label className="upload-zone">
                       <span className="upload-icon material-symbols-outlined">upload_file</span>
                       <strong>Drop your CV here, or browse</strong>
-                      <small>PDF only · Max 10 MB</small>
+                      <small>PDF only Â· Max 10 MB</small>
                       <input type="file" accept="application/pdf,.pdf" onChange={e => { handleCvFileUpload(e); clearFieldError('cvFile') }} />
                     </label>
 
@@ -1804,7 +1876,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                       </div>
                     )}
                   </>}
-                  {studentStep === 4 && <><div className="card-heading"><span className="section-number">05</span><div><h3>Review your dossier</h3><p>A final calm read-through before you record your motivation.</p></div></div><div className="review-list">{[['General information', studentName && studentEmail, 'person'], ['Education', studentSchool && studentMajor, 'school'], ['Experience', projectTitle && purposeStatement, 'auto_awesome'], ['CV deposit', !!cvFilePreviewUrl, 'description']].map(([label, value, icon]) => <div className="review-row" key={String(label)}><span className="material-symbols-outlined">{icon}</span><div><strong>{label}</strong><small>{value ? 'Complete · Ready to review' : 'Needs your attention'}</small></div><span className={value ? 'check-mark material-symbols-outlined' : 'warning-mark material-symbols-outlined'}>{value ? 'check_circle' : 'warning'}</span></div>)}</div><div className="review-callout"><span className="material-symbols-outlined">verified</span><p><strong>Almost there.</strong> Your application will remain editable until you submit the final video.</p></div></>}
+                  {studentStep === 4 && <><div className="card-heading"><span className="section-number">05</span><div><h3>Review your dossier</h3><p>A final calm read-through before you record your motivation.</p></div></div><div className="review-list">{[['General information', studentName && studentEmail, 'person'], ['Education', studentSchool && studentMajor, 'school'], ['Experience', projectTitle && purposeStatement, 'auto_awesome'], ['CV deposit', !!cvFilePreviewUrl, 'description']].map(([label, value, icon]) => <div className="review-row" key={String(label)}><span className="material-symbols-outlined">{icon}</span><div><strong>{label}</strong><small>{value ? 'Complete Â· Ready to review' : 'Needs your attention'}</small></div><span className={value ? 'check-mark material-symbols-outlined' : 'warning-mark material-symbols-outlined'}>{value ? 'check_circle' : 'warning'}</span></div>)}</div><div className="review-callout"><span className="material-symbols-outlined">verified</span><p><strong>Almost there.</strong> Your application will remain editable until you submit the final video.</p></div></>}
                   {studentStep === 5 && <>
                     <div className="card-heading">
                       <span className="section-number">06</span>
@@ -1818,7 +1890,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                       <span className="material-symbols-outlined">campaign</span>
                       <div>
                         <strong>Video replaces motivation letter</strong>
-                        <p>Share what drives your work and how this grant would change what’s possible. Aim for 90 seconds and keep it between 60 and 120 seconds.</p>
+                        <p>Share what drives your work and how this grant would change whatâ€™s possible. Aim for 90 seconds and keep it between 60 and 120 seconds.</p>
                       </div>
                     </div>
 
@@ -1831,7 +1903,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                             <div>
                               <strong style={{ fontSize: '0.88rem', color: 'var(--ink)' }}>{videoFileName || 'Attached motivation video'}</strong>
                               <small style={{ color: 'var(--muted)', display: 'block', fontSize: '0.72rem' }}>
-                                Duration: {formatVideoDuration(videoDuration)} {videoDuration !== null && (videoDuration >= 60 && videoDuration <= 120 ? '· Valid duration (60–120s)' : '· Outside 60–120s range')}
+                                Duration: {formatVideoDuration(videoDuration)} {videoDuration !== null && (videoDuration >= 60 && videoDuration <= 120 ? 'Â· Valid duration (60â€“120s)' : 'Â· Outside 60â€“120s range')}
                               </small>
                             </div>
                           </div>
@@ -1850,8 +1922,8 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
                           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: videoDuration !== null && videoDuration >= 60 && videoDuration <= 120 ? '#047857' : '#b91c1c' }}>
                             {videoDuration !== null && videoDuration >= 60 && videoDuration <= 120
-                              ? '✓ Meets the 60–120 second requirement'
-                              : '⚠ Video must be between 60 and 120 seconds long'}
+                              ? 'âœ“ Meets the 60â€“120 second requirement'
+                              : 'âš  Video must be between 60 and 120 seconds long'}
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button
@@ -1905,7 +1977,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                             <span className="material-symbols-outlined">videocam</span>
                           </div>
                           <strong>Record with Webcam</strong>
-                          <small>Use your camera to record directly in your browser. Enforces 60–120s timer with a live counter.</small>
+                          <small>Use your camera to record directly in your browser. Enforces 60â€“120s timer with a live counter.</small>
                           <div className="choice-action">
                             <span>Open recorder</span>
                             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
@@ -1922,7 +1994,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                             <span className="material-symbols-outlined">upload_file</span>
                           </div>
                           <strong>Upload Video File</strong>
-                          <small>Already recorded? Upload your MP4, WebM, or MOV video file (up to 25 MB). Length must be 60–120s.</small>
+                          <small>Already recorded? Upload your MP4, WebM, or MOV video file (up to 25 MB). Length must be 60â€“120s.</small>
                           <div className="choice-action" style={{ color: '#b45309' }}>
                             <span>Choose video</span>
                             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
@@ -1966,13 +2038,13 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                                 <span>
                                   {isRecording
                                     ? `Recording: ${formatVideoDuration(recordingSeconds)} / 02:00`
-                                    : 'Ready to record · Target 60–120s'}
+                                    : 'Ready to record Â· Target 60â€“120s'}
                                 </span>
                               </div>
                               <div style={{ fontSize: '0.72rem', color: recordingSeconds >= 60 ? '#047857' : '#78818c', fontWeight: 700 }}>
                                 {recordingSeconds < 60
                                   ? `${60 - recordingSeconds}s remaining until valid minimum`
-                                  : `Valid length (${formatVideoDuration(recordingSeconds)}) — max 2:00`}
+                                  : `Valid length (${formatVideoDuration(recordingSeconds)}) â€” max 2:00`}
                               </div>
                             </div>
 
@@ -2059,7 +2131,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                                 Drag & drop your video file here, or browse
                               </strong>
                               <small style={{ color: 'var(--muted)', marginTop: 4 }}>
-                                MP4, WebM, or MOV · Max 25 MB · Duration 60 to 120 seconds
+                                MP4, WebM, or MOV Â· Max 25 MB Â· Duration 60 to 120 seconds
                               </small>
                               <input
                                 ref={videoUploadInputRef}
@@ -2108,18 +2180,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
         {portalMode === 'admin' && (
           <div style={{ padding: '24px 32px' }}>
             {adminTab === 'overview' && <Dashboard proposals={proposals} statusForCandidate={statusForCandidate} decisionForCandidate={decisionForCandidate} onOpenCandidate={openCandidateAudit} onGoTo={setAdminTab} onRunBatch={runBatchDemoAudit} />}
-            {adminTab === 'decisions' && (
-              <DecisionsTab
-                proposals={proposals}
-                statusForCandidate={statusForCandidate}
-                decisionForCandidate={decisionForCandidate}
-                statusClass={statusClass}
-                recommendationClass={recommendationClass}
-                onOpenCandidate={openCandidateAudit}
-                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
-                onRunBatch={runBatchDemoAudit}
-              />
-            )}
             {adminTab === 'audit' && candidateView === 'pools' && (
               <TalentPool
                 proposals={proposals}
@@ -2144,6 +2204,9 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
                 onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
                 onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+                adminProfile={adminProfile}
+                onSaveProfile={saveAdminProfile}
+                apiUrl={apiUrl}
               />
             )}
             {/* TAB: SCHOLARSHIPS */}
@@ -2164,7 +2227,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 <div className="admin-scholarships dossier-panel">
                   <div className="overview-intro">
                     <div>
-                      <span className="eyebrow">Award catalogue · Application 2026</span>
+                      <span className="eyebrow">Award catalogue Â· Application 2026</span>
                       <h2>Scholarships</h2>
                       <p>Scholarship awards, stipend levels and eligibility criteria managed alongside the fellowship catalogue.</p>
                     </div>
@@ -2196,7 +2259,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 <div className="admin-fellowships dossier-panel">
                   <div className="overview-intro">
                     <div>
-                      <span className="eyebrow">Programme catalogue · Application 2026</span>
+                      <span className="eyebrow">Programme catalogue Â· Application 2026</span>
                       <h2>Fellowships</h2>
                       <p>Programme definitions, award levels and eligibility criteria for the committee's fellowship catalogue.</p>
                     </div>
@@ -2222,7 +2285,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                   actions={[
                     { label: 'Batch audit', icon: 'play_circle', onClick: runBatchDemoAudit },
                     { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Decisions', icon: 'gavel', onClick: () => setAdminTab('decisions') },
                   ]}
                 />
                 <div className="m3-card">
@@ -2325,7 +2387,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                   <div>
                     <strong style={{ fontSize: '1rem' }}>Active Candidate: {selectedProposal?.applicant_name || selectedProposal?.id || 'None'}</strong>
                     <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                      {selectedProposal ? `Major: ${selectedProposal.major || 'General'} • Stated GPA: ${selectedProposal.gpa?.toFixed(2) || '—'} • Dossier: ${selectedProposal.id}` : 'Select a candidate to review cross-modal evidence.'}
+                      {selectedProposal ? `Major: ${selectedProposal.major || 'General'} â€¢ Stated GPA: ${selectedProposal.gpa?.toFixed(2) || 'â€”'} â€¢ Dossier: ${selectedProposal.id}` : 'Select a candidate to review cross-modal evidence.'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -2406,7 +2468,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
 
                     <div style={{ background: '#00356b', color: 'white', padding: 10, borderRadius: 8, marginBottom: 8, fontSize: '0.78rem' }}>
                       <span style={{ color: '#93c5fd' }}>Whisper ASR Speech Analysis:</span><br />
-                      <strong>Confidence: 98.7% • 16kHz Audio Channel</strong>
+                      <strong>Confidence: 98.7% â€¢ 16kHz Audio Channel</strong>
                     </div>
 
                     <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#334155', maxHeight: 160, overflowY: 'auto' }}>
@@ -2447,7 +2509,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
 
                         {adminMultimodalResult.multimodal_verification.discrepancies.map((d: any, idx: number) => (
                           <div key={idx} style={{ background: '#ffffff', borderRadius: 8, padding: 10, border: '1px solid #fca5a5', marginTop: 6, fontSize: '0.8rem' }}>
-                            <div style={{ fontWeight: 700, color: '#dc2626' }}>{d.source} — Delta: {d.delta}</div>
+                            <div style={{ fontWeight: 700, color: '#dc2626' }}>{d.source} â€” Delta: {d.delta}</div>
                             <div style={{ color: '#475569', marginTop: 2 }}>{d.explanation}</div>
                           </div>
                         ))}
@@ -2470,7 +2532,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                   onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
                   actions={[
                     { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Arbitration', icon: 'gavel', onClick: () => setAdminTab('arbitration') },
                     { label: 'RAG rules', icon: 'policy', onClick: () => setAdminTab('corpus') },
                   ]}
                 />
@@ -2606,7 +2667,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                   onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
                   actions={[
                     { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Arbitration', icon: 'gavel', onClick: () => setAdminTab('arbitration') },
                     { label: 'RAG rules', icon: 'policy', onClick: () => setAdminTab('corpus') },
                   ]}
                 />
@@ -2681,33 +2741,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
             </div>
           )}
 
-            {/* TAB: CHAIR ARBITRATION & SIGN-OFF */}
-            {adminTab === 'arbitration' && (
-              <ArbitrationTab
-                totalCandidates={proposals.length}
-                needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                proposals={proposals}
-                sortedCohort={sortedCohort}
-                selectedProposal={selectedProposal}
-                isSignedOff={isSignedOff}
-                signOffTimestamp={signOffTimestamp}
-                overrideScore={overrideScore}
-                setOverrideScore={setOverrideScore}
-                overrideDecision={overrideDecision}
-                setOverrideDecision={setOverrideDecision}
-                overrideNotes={overrideNotes}
-                setOverrideNotes={setOverrideNotes}
-                onSignOff={() => {
-                  setIsSignedOff(true)
-                  setSignOffTimestamp(new Date().toLocaleString())
-                  alert(`✅ Decision Authorized by Yale Fellowship Committee Chair.\nApplicant: ${selectedProposal?.applicant_name || selectedProposal?.id}\nDecision: ${overrideDecision}\nScore: ${overrideScore}/5.0`)
-                }}
-                onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
-                onRunBatch={runBatchDemoAudit}
-              />
-            )}
-
             {/* TAB: YALE CORPUS & GUIDELINES */}
             {adminTab === 'corpus' && (
               <CorpusTab
@@ -2737,6 +2770,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 selectedProposal={selectedProposal}
                 n8nTriggerLoading={n8nTriggerLoading}
                 n8nTriggerResult={n8nTriggerResult}
+                  n8nHealth={n8nHealth}
                 triggerN8nWorkflow={triggerN8nWorkflow}
                 onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
                 onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}

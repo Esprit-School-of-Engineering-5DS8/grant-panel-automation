@@ -93,6 +93,8 @@ export default function CvVisionPanel({ proposalId, applicantName, pdfUrl, apiUr
 
   const load = useCallback((force: boolean) => {
     let cancelled = false
+    setLoading(true)
+    setError(null)
     const timer = window.setInterval(() => setStageIndex(current => Math.min(current + 1, STAGES.length - 1)), 650)
 
     const endpoint = `/api/admin/cv-ocr/${encodeURIComponent(proposalId)}${force ? '?force=true' : ''}`
@@ -115,6 +117,7 @@ export default function CvVisionPanel({ proposalId, applicantName, pdfUrl, apiUr
           return
         }
         setResult(data)
+        setError(null)
         setActivePage(data.pages?.[0]?.index ?? 1)
         onResultRef.current?.(proposalId, data)
       })

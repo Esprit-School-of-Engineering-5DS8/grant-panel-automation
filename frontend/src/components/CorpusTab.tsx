@@ -49,7 +49,6 @@ export function CorpusTab({
         actions={[
           { label: 'Run RAG query', icon: 'search', onClick: runRagSearch },
           { label: 'All candidates', icon: 'groups', onClick: () => onGoTo('audit') },
-          { label: 'Decision register', icon: 'gavel', onClick: () => onGoTo('decisions') },
           { label: 'Overview', icon: 'space_dashboard', onClick: () => onGoTo('overview') },
         ]}
       />

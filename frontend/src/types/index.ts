@@ -27,6 +27,8 @@ export interface Application {
     subcontracting?: number
     indirect_costs?: number
     requested_grant?: number
+    funding_type?: string
+    funding_program?: string
   }
   sections?: {
     abstract?: string

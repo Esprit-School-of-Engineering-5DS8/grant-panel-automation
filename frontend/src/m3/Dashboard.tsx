@@ -41,11 +41,10 @@ export function Dashboard({ proposals, statusForCandidate, decisionForCandidate,
   const actions = [
     { label: 'Batch audit', icon: 'play_circle', onClick: onRunBatch },
     { label: 'Audit workspace', icon: 'fact_check', onClick: () => onGoTo('audit') },
-    { label: 'Decision register', icon: 'gavel', onClick: () => onGoTo('decisions') },
     { label: 'RAG rules', icon: 'policy', onClick: () => onGoTo('corpus') },
     { label: 'Continue audit', icon: 'arrow_forward', onClick: () => onGoTo('audit') },
     { label: 'Review queue', icon: 'groups', onClick: () => onGoTo('audit') },
-    { label: 'Sign off', icon: 'verified', onClick: () => onGoTo('decisions') },
+    { label: 'Sign off', icon: 'verified', onClick: () => onGoTo('audit') },
   ]
 
   const kpis = [
@@ -53,7 +52,7 @@ export function Dashboard({ proposals, statusForCandidate, decisionForCandidate,
     { label: 'Needs review', icon: 'pending_actions', value: needsReview, delta: `${pct(needsReview)}% of cohort`, onClick: () => onGoTo('audit') },
     { label: 'In review', icon: 'autorenew', value: inReview, delta: `${pct(inReview)}% of cohort`, onClick: () => onGoTo('audit') },
     { label: 'Verified', icon: 'verified', value: verified, delta: `${pct(verified)}% of cohort`, onClick: () => onGoTo('audit') },
-    { label: 'Decision needed', icon: 'gavel', value: decisionNeeded, delta: `${pct(decisionNeeded)}% of cohort`, onClick: () => onGoTo('decisions') },
+    { label: 'Decision needed', icon: 'gavel', value: decisionNeeded, delta: `${pct(decisionNeeded)}% of cohort`, onClick: () => onGoTo('audit') },
   ]
 
   const applicants = proposals.filter(matches).slice(0, 5)

@@ -106,6 +106,8 @@ class StudentApplicationPayload(BaseModel):
     gpa: Optional[float] = None
     page_count: Optional[int] = None
     requested_grant: Optional[float] = None
+    funding_type: Optional[str] = None
+    funding_program: Optional[str] = None
     financials: Optional[Dict[str, Any]] = Field(default_factory=dict)
     budget: Optional[Dict[str, Any]] = Field(default_factory=dict)
     sections: Optional[Dict[str, str]] = Field(default_factory=dict)
@@ -126,6 +128,14 @@ class StudentApplicationPayload(BaseModel):
     sex: Optional[str] = None
     degree_track: Optional[str] = None
     graduation_year: Optional[str] = None
+
+class RuntimeSettingsPayload(BaseModel):
+    groq_api_key: Optional[str] = None
+    groq_transcription_model: Optional[str] = None
+    groq_cv_label_model: Optional[str] = None
+    groq_audit_model: Optional[str] = None
+    groq_criterion_model: Optional[str] = None
+    groq_video_model: Optional[str] = None
 
 class ParseCvPayload(BaseModel):
     cv_content: str
@@ -205,6 +215,10 @@ def _media_upload_path(media_id: Optional[str], extensions: Tuple[str, ...] = ("
 
 def _candidate_cv_path(candidate: Dict[str, Any]) -> Optional[str]:
     """Resolve a candidate's CV file across every upload convention we have written."""
+    candidate_name = re.sub(r"[^a-z0-9]", "", str(candidate.get("applicant_name") or "").lower())
+    is_hazem_demo = candidate_id(candidate) in {"LOCAL-HAZEM-MRAD", "APP-D6F77307DC"} or candidate_name in {"hazemmrad", "hazemmrad1"}
+    if is_hazem_demo and os.path.isfile(HAZEM_CV_PATH):
+        return HAZEM_CV_PATH
     stored_path = _stored_upload_path(candidate.get("cv_storage_key"))
     if stored_path:
         return stored_path
@@ -239,7 +253,9 @@ def _candidate_video_upload(candidate: Dict[str, Any]) -> Optional[str]:
 
 
 def _candidate_video_path(candidate: Dict[str, Any]) -> Optional[str]:
-    if candidate_id(candidate) == "LOCAL-HAZEM-MRAD" and os.path.exists(HAZEM_VIDEO_PATH):
+    candidate_name = re.sub(r"[^a-z0-9]", "", str(candidate.get("applicant_name") or "").lower())
+    is_hazem_demo = candidate_id(candidate) in {"LOCAL-HAZEM-MRAD", "APP-D6F77307DC"} or candidate_name in {"hazemmrad", "hazemmrad1"}
+    if is_hazem_demo and os.path.exists(HAZEM_VIDEO_PATH):
         return HAZEM_VIDEO_PATH
     stored_path = _candidate_video_upload(candidate)
     if stored_path:
@@ -831,7 +847,25 @@ def evaluate_video(payload: AdminArtifactPayload):
         return _review_video(candidate, transcript)
     except Exception as exc:
         logger.exception("Video evaluation failed for candidate %s", candidate_id(candidate))
-        raise HTTPException(status_code=502, detail=f"LLM video evaluation failed: {exc}")
+        # Keep the n8n orchestration alive when the configured provider is
+        # temporarily unavailable (for example Groq HTTP 429).  Returning a
+        # structured unavailable artifact is honest and lets the chair stage
+        # distinguish missing evidence from a fabricated model result.
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "unavailable",
+            "source": "provider-unavailable",
+            "checked_at": artifact_time(),
+            "model": GROQ_VIDEO_MODEL,
+            "summary": "Video evaluation was not produced because the LLM provider was unavailable.",
+            "claims": [],
+            "concerns": ["Retry video evaluation when the configured provider is available."],
+            "visual_events": [],
+            "segments": transcript.get("segments") or [],
+            "frame_count": 0,
+            "frame_notice": "No model-backed video conclusion was produced.",
+            "provider_error": str(exc)[:800],
+        }
 
 
 @app.get("/api/admin/evaluate-video")
@@ -847,7 +881,21 @@ def evaluate_video_demo_get(candidate_id_param: Optional[str] = None, applicant_
         return _review_video(candidate, transcript)
     except Exception as exc:
         logger.exception("Video evaluation failed for candidate %s", candidate_id_param)
-        raise HTTPException(status_code=502, detail=f"LLM video evaluation failed: {exc}")
+        return {
+            "candidate_id": candidate_id(candidate),
+            "status": "unavailable",
+            "source": "provider-unavailable",
+            "checked_at": artifact_time(),
+            "model": GROQ_VIDEO_MODEL,
+            "summary": "Video evaluation was not produced because the LLM provider was unavailable.",
+            "claims": [],
+            "concerns": ["Retry video evaluation when the configured provider is available."],
+            "visual_events": [],
+            "segments": transcript.get("segments") or [],
+            "frame_count": 0,
+            "frame_notice": "No model-backed video conclusion was produced.",
+            "provider_error": str(exc)[:800],
+        }
 
 @app.post("/api/admin/verify-contract-institution")
 def verify_contract_institution(payload: AdminArtifactPayload):
@@ -1060,12 +1108,62 @@ def integration_health():
     """Report the API and configured n8n health without treating CORS preflight as reachability."""
     n8n_url = os.getenv("N8N_HEALTH_URL", "http://localhost:5678/healthz")
     if not os.getenv("N8N_HEALTH_URL") and not os.getenv("N8N_WEBHOOK_URL"):
-        return {"api": "healthy", "n8n": "not_configured", "n8n_url": n8n_url, "detail": "Set N8N_HEALTH_URL or N8N_WEBHOOK_URL to enable the n8n probe."}
+        return {"api": "healthy", "n8n": "not_configured", "n8n_url": n8n_url, "groq_api_key_configured": bool(GROQ_API_KEY), "groq_model": GROQ_AUDIT_MODEL, "detail": "Set N8N_HEALTH_URL or N8N_WEBHOOK_URL to enable the n8n probe."}
     try:
         response = requests.get(n8n_url, timeout=1.5)
-        return {"api": "healthy", "n8n": "reachable" if response.ok else "unavailable", "n8n_url": n8n_url, "http_status": response.status_code}
+        return {"api": "healthy", "n8n": "reachable" if response.ok else "unavailable", "n8n_url": n8n_url, "http_status": response.status_code, "groq_api_key_configured": bool(GROQ_API_KEY), "groq_model": GROQ_AUDIT_MODEL}
     except requests.RequestException as exc:
-        return {"api": "healthy", "n8n": "unavailable", "n8n_url": n8n_url, "detail": str(exc)}
+        return {"api": "healthy", "n8n": "unavailable", "n8n_url": n8n_url, "groq_api_key_configured": bool(GROQ_API_KEY), "groq_model": GROQ_AUDIT_MODEL, "detail": str(exc)}
+
+@app.get("/api/admin/runtime-settings")
+def get_runtime_settings():
+    return {
+        "groq_api_key_configured": bool(GROQ_API_KEY),
+        "groq_api_key_preview": f"{GROQ_API_KEY[:4]}…{GROQ_API_KEY[-4:]}" if len(GROQ_API_KEY) > 8 else "",
+        "groq_transcription_model": GROQ_TRANSCRIPTION_MODEL,
+        "groq_cv_label_model": GROQ_CV_LABEL_MODEL,
+        "groq_audit_model": GROQ_AUDIT_MODEL,
+        "groq_criterion_model": GROQ_CRITERION_MODEL,
+        "groq_video_model": GROQ_VIDEO_MODEL,
+    }
+
+@app.put("/api/admin/runtime-settings")
+def update_runtime_settings(payload: RuntimeSettingsPayload):
+    global GROQ_API_KEY, GROQ_TRANSCRIPTION_MODEL, GROQ_CV_LABEL_MODEL, GROQ_AUDIT_MODEL, GROQ_CRITERION_MODEL, GROQ_VIDEO_MODEL
+    values = payload.model_dump(exclude_none=True)
+    if "groq_api_key" in values: GROQ_API_KEY = str(values["groq_api_key"]).strip()
+    for field, name in (("groq_transcription_model", "GROQ_TRANSCRIPTION_MODEL"), ("groq_cv_label_model", "GROQ_CV_LABEL_MODEL"), ("groq_audit_model", "GROQ_AUDIT_MODEL"), ("groq_criterion_model", "GROQ_CRITERION_MODEL"), ("groq_video_model", "GROQ_VIDEO_MODEL")):
+        if field in values: globals()[name] = str(values[field]).strip()
+    # Persist settings so a backend restart does not silently restore an old
+    # provider key or model configuration. The full key is never returned.
+    env_values = {
+        "GROQ_API_KEY": GROQ_API_KEY,
+        "GROQ_TRANSCRIPTION_MODEL": GROQ_TRANSCRIPTION_MODEL,
+        "GROQ_CV_LABEL_MODEL": GROQ_CV_LABEL_MODEL,
+        "GROQ_AUDIT_MODEL": GROQ_AUDIT_MODEL,
+        "GROQ_CRITERION_MODEL": GROQ_CRITERION_MODEL,
+        "GROQ_VIDEO_MODEL": GROQ_VIDEO_MODEL,
+    }
+    env_path = os.path.join(PROJECT_ROOT, ".env")
+    try:
+        existing = {}
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as source:
+                existing = {line.split("=", 1)[0]: line for line in source.read().splitlines() if "=" in line and not line.lstrip().startswith("#")}
+        lines = []
+        written = set()
+        for key, line in existing.items():
+            if key in env_values:
+                lines.append(f"{key}={env_values[key]}")
+                written.add(key)
+            else:
+                lines.append(line)
+        lines.extend(f"{key}={value}" for key, value in env_values.items() if key not in written)
+        with open(env_path, "w", encoding="utf-8") as target:
+            target.write("\n".join(lines) + "\n")
+    except OSError as exc:
+        logger.warning("Runtime settings updated in memory but could not persist to .env: %s", exc)
+    return get_runtime_settings()
 
 # --- STAGE 1: PDF and Student Dossier Parsing ---
 @app.post("/api/stage1/parse-pdf")
@@ -1099,6 +1197,8 @@ def submit_student_application(background_tasks: BackgroundTasks, app_data: Stud
         "gpa": app_data.gpa,
         "page_count": app_data.page_count,
         "requested_grant": app_data.requested_grant,
+        "funding_type": app_data.funding_type,
+        "funding_program": app_data.funding_program,
         "financials": app_data.financials,
         "budget": budget,
         "sections": app_data.sections,
@@ -1218,7 +1318,18 @@ def run_deterministic_checks(proposal: Dict[str, Any]):
         result = _run_rag_fact_check(proposal)
     except Exception as exc:
         logger.exception("Stage 2 LLM fact-check failed")
-        raise HTTPException(status_code=502, detail=f"LLM fact-check failed: {exc}")
+        return {
+            "candidate_id": candidate_id(proposal),
+            "status": "unavailable",
+            "source": "provider-unavailable",
+            "human_decision_required": True,
+            "human_review_required": True,
+            "is_eligible": None,
+            "checks": [],
+            "evidence": [],
+            "flags": ["RAG fact-check was not produced because the configured LLM provider was unavailable."],
+            "provider_error": str(exc)[:800],
+        }
     return {
         **result,
         "status": "human_review_required" if result.get("status") == "complete" else result.get("status"),
@@ -1434,9 +1545,12 @@ def list_proposals():
                             "degree_track": data.get("degree_track", data.get("degreeTrack")),
                             "graduation_year": data.get("graduation_year", data.get("graduationYear")),
                             "cv_filename": data.get("cv_filename", data.get("cvFileName")),
-                            "video_url": data.get("video_url"),
+                            "video_url": data.get("video_url") or (
+                                f"/api/proposals/{quote(str(candidate_id_value), safe='')}/video"
+                                if _candidate_video_path(data) else None
+                            ),
                             "video_transcript": data.get("video_transcript", data.get("transcript")),
-                            "video_status": data.get("video_status", "Submitted" if data.get("video_url") else "Not provided"),
+                            "video_status": data.get("video_status", "Submitted" if (data.get("video_url") or _candidate_video_path(data)) else "Not provided"),
                             "video_duration": data.get("video_duration"),
                             "submitted_at": data.get("submitted_at", data.get("created_at")),
                             "updated_at": data.get("updated_at", data.get("submitted_at", data.get("created_at"))),
@@ -1867,7 +1981,8 @@ def run_candidate_audit(proposal_id: str) -> None:
         _save_audit_stage(proposal_id, "cv_ocr", "failed", result=cv_result, error=cv_result.get("error") or cv_result.get("message"))
         cv_result = None
 
-    has_video = bool(_candidate_video_upload(candidate))
+    # Include legacy/local demo videos resolved by identity, not only uploaded storage keys.
+    has_video = bool(_candidate_video_path(candidate))
     transcript = run_stage("video_transcription", lambda: _groq_transcribe(candidate), enabled=has_video)
     if transcript and (transcript.get("status") != "complete" or not transcript.get("transcript")):
         failures += 1
@@ -2106,18 +2221,22 @@ def get_corpus_pdf(pdf_name: str):
 # --- N8N ORCHESTRATOR BRIDGE ---
 @app.post("/api/n8n/trigger-webhook")
 def trigger_n8n_webhook(proposal: Dict[str, Any], webhook_mode: Optional[str] = "live"):
-    endpoints = [
+    configured = os.getenv("N8N_WEBHOOK_URL", "").strip()
+    base_endpoints = [configured] if configured else [
+        "http://localhost:5678/webhook/admin-candidate-audit",
         "http://localhost:5678/webhook/submit-proposal",
-        "http://localhost:5678/webhook-test/submit-proposal"
-    ] if webhook_mode != "test" else [
-        "http://localhost:5678/webhook-test/submit-proposal",
-        "http://localhost:5678/webhook/submit-proposal"
     ]
+    if webhook_mode == "test":
+        base_endpoints = [url.replace("/webhook/", "/webhook-test/") for url in base_endpoints] + base_endpoints
+    endpoints = [url for url in base_endpoints if url]
 
     last_error = None
     for url in endpoints:
         try:
-            res = requests.post(url, json=proposal, timeout=12)
+            # The admin audit includes CV parsing, video stages, deterministic
+            # checks, and optional Groq calls. Do not label a still-running
+            # n8n execution as unreachable after the old 12-second limit.
+            res = requests.post(url, json=proposal, timeout=90)
             if res.status_code < 400:
                 try:
                     data = res.json()
@@ -2136,8 +2255,8 @@ def trigger_n8n_webhook(proposal: Dict[str, Any], webhook_mode: Optional[str] = 
     return {
         "success": False,
         "n8n_online": False,
-        "error": f"Could not reach active n8n webhook on localhost:5678. Reason: {last_error}",
-        "hint": "Ensure Docker n8n container is running ('docker compose up -d') and the workflow is activated or in 'Listen for Test Event' mode."
+        "error": f"Could not reach an active n8n webhook. Reason: {last_error}",
+        "hint": "Confirm the n8n workflow is active and the API is reachable from the n8n container. Long audits may take up to 90 seconds. Set N8N_WEBHOOK_URL when n8n is hosted elsewhere."
     }
 
 # Mount static frontend directory

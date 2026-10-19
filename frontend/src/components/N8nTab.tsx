@@ -6,6 +6,7 @@ export interface N8nTabProps {
   selectedProposal: any
   n8nTriggerLoading: boolean
   n8nTriggerResult: any
+  n8nHealth: any
   triggerN8nWorkflow: (mode: 'test' | 'live') => void
   onOpenWorkspace: () => void
   onGoTo: (tab: any) => void
@@ -17,6 +18,7 @@ export function N8nTab({
   selectedProposal,
   n8nTriggerLoading,
   n8nTriggerResult,
+  n8nHealth,
   triggerN8nWorkflow,
   onOpenWorkspace,
   onGoTo,
@@ -33,10 +35,16 @@ export function N8nTab({
           { label: 'Open n8n UI', icon: 'open_in_new', onClick: () => window.open('http://localhost:5678', '_blank') },
           { label: 'Overview', icon: 'space_dashboard', onClick: () => onGoTo('overview') },
           { label: 'Candidates', icon: 'groups', onClick: () => onGoTo('audit') },
-          { label: 'Decisions', icon: 'gavel', onClick: () => onGoTo('decisions') },
         ]}
       />
       <div className="m3-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 12px', marginBottom: 16, borderRadius: 10, background: n8nHealth?.n8n === 'reachable' ? '#ecfdf5' : '#fff7ed', border: `1px solid ${n8nHealth?.n8n === 'reachable' ? '#a7f3d0' : '#fed7aa'}` }}>
+          <div>
+            <strong style={{ fontSize: '0.84rem', color: n8nHealth?.n8n === 'reachable' ? '#065f46' : '#9a3412' }}>n8n runtime: {n8nHealth?.n8n === 'reachable' ? 'reachable' : n8nHealth?.n8n || 'not checked'}</strong>
+            <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 3 }}>{n8nHealth?.detail || 'The bridge waits for the complete n8n audit response before reporting success.'}</div>
+          </div>
+          <span className="m3-badge m3-badge-neutral">Groq: {n8nHealth?.groq_api_key_configured ? 'configured' : 'not configured'}</span>
+        </div>
         <div className="m3-card-title-row">
           <div>
             <h2>n8n Low-Code Multi-Agent Orchestrator Bridge</h2>
@@ -60,7 +68,7 @@ export function N8nTab({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: 24 }}>account_tree</span>
-              <strong style={{ fontSize: '0.95rem' }}>Active Workflow: workflows/grant_panel_simulator_n8n.json</strong>
+              <strong style={{ fontSize: '0.95rem' }}>Active Workflow: workflows/grant_panel_admin_audit_n8n.json</strong>
             </div>
             <span className="m3-badge m3-badge-neutral" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 700 }}>
               Port: 5678 • Webhook Mode
@@ -145,7 +153,7 @@ export function N8nTab({
         <h3 style={{ fontSize: '0.9rem', marginBottom: 12, color: '#334155' }}>End-to-End n8n Orchestrated Pipeline Graph</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
           {[
-            { step: 'Stage 0', title: 'Webhook Trigger', desc: 'POST /submit-proposal accepts candidate dossier', icon: 'input' },
+            { step: 'Stage 0', title: 'Webhook Trigger', desc: 'POST /admin-candidate-audit accepts candidate dossier', icon: 'input' },
             { step: 'Stage 2', title: 'Deterministic Gate', desc: 'Checks GPA >= 3.0 & $2.5k tech cap', icon: 'verified' },
             { step: 'Stage 3', title: '3 Parallel Agents', desc: 'Technical, Impact & Budget evaluators', icon: 'group_work' },
             { step: 'Stage 4', title: 'Disagreement Check', desc: 'Detects divergence >= 2.0 pts', icon: 'alt_route' },

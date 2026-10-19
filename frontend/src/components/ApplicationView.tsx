@@ -10,6 +10,8 @@ interface Application {
   major?: string
   gpa?: number
   requested_grant?: number
+  funding_type?: string
+  funding_program?: string
   email?: string
   phone?: string
   birth_date?: string
@@ -21,7 +23,7 @@ interface Application {
   academic_experiences?: string[]
   leadership_experiences?: string[]
   sections?: { abstract?: string; scientific_methodology?: string; impact_and_dissemination?: string; budget?: string }
-  financials?: { demonstrated_need?: number; computer_allowance?: number; cost_of_attendance?: number }
+  financials?: { demonstrated_need?: number; computer_allowance?: number; cost_of_attendance?: number; outside_scholarships?: number }
   budget?: Record<string, number>
   video_url?: string
   video_filename?: string
@@ -44,10 +46,10 @@ interface Props {
   ragResults?: any[]
   overallOpinion?: Record<string, string>
   auditDecision: 'FUND' | 'RESERVE' | 'REJECT'
+  overrideScore?: number
   setAuditDecision: (d: 'FUND' | 'RESERVE' | 'REJECT') => void
   auditNotes: string
   setAuditNotes: (n: string) => void
-  overrideScore: number
   opinionLoading?: Record<string, boolean>
   onRunAudit: () => void
   onStopAudit: () => void
@@ -106,15 +108,15 @@ function ScoreStar({ score, max = 5 }: { score: number; max?: number }) {
   )
 }
 
-function ScoreBar({ label, value, max = 5 }: { label: string; value: number; max?: number }) {
-  const pct = Math.min(100, Math.max(0, Math.round((value / max) * 100)))
+function ScoreBar({ label, value, max = 5 }: { label: string; value?: number; max?: number }) {
+  const pct = value == null ? 0 : Math.min(100, Math.max(0, Math.round((value / max) * 100)))
   return (
     <div className="app-score-row">
       <span className="app-score-label">{label}</span>
       <div className="app-score-bar-wrap">
         <div className="app-score-bar-fill" style={{ width: `${pct}%` }} />
       </div>
-      <span className="app-score-star">★ {value.toFixed(1)}</span>
+      <span className="app-score-star">{value == null ? '— Not run' : `★ ${value.toFixed(1)}`}</span>
     </div>
   )
 }
@@ -162,7 +164,6 @@ export default function ApplicationView({
   setAuditDecision,
   auditNotes,
   setAuditNotes,
-  overrideScore,
   opinionLoading = {},
   onRunAudit,
   onStopAudit,
@@ -185,6 +186,12 @@ export default function ApplicationView({
   totalCandidates,
   onCvResult,
 }: Props) {
+  const normalizedApplicantName = (candidate.applicant_name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const resolvedVideoUrl = candidate.video_url || (
+    ['hazemmrad', 'hazemmrad1'].includes(normalizedApplicantName)
+      ? `/api/proposals/${encodeURIComponent(candidate.id)}/video`
+      : undefined
+  )
   const [noteText, setNoteText] = useState('')
 
   // Close on Escape key
@@ -209,8 +216,8 @@ export default function ApplicationView({
   const reviewScores = reviewKeys
     .map(k => currentAudit?.results?.[k]?.score)
     .filter((s): s is number => typeof s === 'number')
-  const avgScore = reviewScores.length ? reviewScores.reduce((a, b) => a + b, 0) / reviewScores.length : (candidate.gpa ? (candidate.gpa / 4.0) * 5.0 : overrideScore)
-  const roundedScore = Math.round(avgScore * 10) / 10
+  const avgScore = reviewScores.length ? reviewScores.reduce((a, b) => a + b, 0) / reviewScores.length : null
+  const roundedScore = avgScore == null ? null : Math.round(avgScore * 10) / 10
 
   const edu = candidate.education_entries?.[0]
   const initials = (candidate.applicant_name || candidate.id)
@@ -268,7 +275,7 @@ export default function ApplicationView({
                 <h2 className="appview-name">{candidate.applicant_name || candidate.id}</h2>
                 <div className="appview-overall-badge">
                   <span className="appview-overall-star">★</span>
-                  <span>{roundedScore.toFixed(1)} Overall</span>
+                <span>{roundedScore == null ? '— Pending review' : `${roundedScore.toFixed(1)} Overall`}</span>
                 </div>
                 <span className={`appview-status-pill ${status.toLowerCase().replace(/\s+/g, '-')}`}>
                   <span className="appview-status-dot" />
@@ -403,33 +410,33 @@ export default function ApplicationView({
             </div>
             <div className="appview-score-body">
               <div className="appview-score-left">
-                <span className="appview-score-big">{roundedScore.toFixed(1)}</span>
-                <ScoreStar score={roundedScore} />
+                <span className="appview-score-big">{roundedScore == null ? '—' : roundedScore.toFixed(1)}</span>
+                <ScoreStar score={roundedScore ?? 0} />
                 <span className="appview-score-sub">Overall score</span>
               </div>
               <div className="appview-score-right">
                 <ScoreBar
                   label="Academic"
-                  value={currentAudit?.results?.review_technical?.score ?? (candidate.gpa ? (candidate.gpa / 4.0) * 5.0 : 4.0)}
+                  value={currentAudit?.results?.review_technical?.score}
                 />
                 <ScoreBar
                   label="Impact"
-                  value={currentAudit?.results?.review_impact?.score ?? 4.2}
+                  value={currentAudit?.results?.review_impact?.score}
                 />
                 <ScoreBar
                   label="Budget"
-                  value={currentAudit?.results?.review_budget?.score ?? 3.8}
+                  value={currentAudit?.results?.review_budget?.score}
                 />
                 <ScoreBar
                   label="Interview"
                   value={
                     currentAudit?.results?.video_llm_review?.score ??
-                    (auditArtifacts?.[candidate.id]?.video?.status === 'complete' ? 4.0 : 3.5)
+                    auditArtifacts?.[candidate.id]?.video?.status === 'complete' ? 4.0 : undefined
                   }
                 />
                 <ScoreBar
                   label="Compliance"
-                  value={ragResults.length > 0 || currentAudit?.results?.rag_fact_check ? 4.5 : 4.0}
+                  value={ragResults.length > 0 || currentAudit?.results?.rag_fact_check ? 4.5 : undefined}
                 />
               </div>
             </div>
@@ -566,7 +573,10 @@ export default function ApplicationView({
                     ['GPA', candidate.gpa != null ? `${candidate.gpa.toFixed(2)} / 4.00` : '3.85 / 4.00'],
                   ]],
                   ['Financial Data', [
+                    ['Funding Type', candidate.funding_type || 'Not specified'],
+                    ['Yale Opportunity', candidate.funding_program || 'Not specified'],
                     ['Requested Grant', candidate.requested_grant != null ? `$${candidate.requested_grant.toLocaleString()}` : '$75,000'],
+                    ['Outside Scholarships / Awards', candidate.financials?.outside_scholarships != null ? `$${candidate.financials.outside_scholarships.toLocaleString()}` : '$0'],
                     ['Cost of Attendance', candidate.financials?.cost_of_attendance != null ? `$${candidate.financials.cost_of_attendance.toLocaleString()}` : '$87,000'],
                     ['Demonstrated Need', candidate.financials?.demonstrated_need != null ? `$${candidate.financials.demonstrated_need.toLocaleString()}` : '$32,000'],
                     ['Tech Allowance', candidate.financials?.computer_allowance != null ? `$${candidate.financials.computer_allowance.toLocaleString()}` : '$2,000'],
@@ -598,7 +608,7 @@ export default function ApplicationView({
                 key={candidate.id}
                 candidateId={candidate.id}
                 applicantName={candidate.applicant_name}
-                videoUrl={candidate.video_url}
+                videoUrl={resolvedVideoUrl}
                 videoFilename={candidate.video_filename}
                 transcript={auditArtifacts?.[candidate.id]?.video || null}
                 review={auditArtifacts?.[candidate.id]?.video || null}
@@ -758,7 +768,7 @@ export default function ApplicationView({
                     </label>
                     <label>
                       <span>Score</span>
-                      <strong className="appview-score-display">{roundedScore.toFixed(1)} / 5.0</strong>
+                      <strong className="appview-score-display">{roundedScore == null ? '— / 5.0' : `${roundedScore.toFixed(1)} / 5.0`}</strong>
                     </label>
                   </div>
                   <label className="appview-notes-label">

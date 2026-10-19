@@ -17,7 +17,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage2/deterministic-checks",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage2/deterministic-checks' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.body || $json) }}"
@@ -69,7 +69,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage3/evaluate-criterion' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ criterion: 'technical', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
@@ -83,7 +83,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage3/evaluate-criterion' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ criterion: 'impact', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
@@ -97,7 +97,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage3/evaluate-criterion",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage3/evaluate-criterion' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ criterion: 'budget', proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json }) }}"
@@ -121,7 +121,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage4/detect-disagreement",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage4/detect-disagreement' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}"
@@ -152,7 +152,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage5/chair-arbitration",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage5/chair-arbitration' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ proposal: $('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json, reviews: $('Collect Round 1 Reviews').first().json.reviews, disagreement_info: $json }) }}"
@@ -176,7 +176,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage6/aggregate-scores",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage6/aggregate-scores' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}"
@@ -190,7 +190,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8001/api/stage7/verify-traceability",
+        "url": "={{ ($env.GRANT_PANEL_API_BASE_URL || 'http://host.docker.internal:8001') + '/api/stage7/verify-traceability' }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ review: $('Agent 1: Technical Evaluator').first().json, raw_proposal_text: JSON.stringify($('Stage 0: Proposal Submission Webhook').first().json.body || $('Stage 0: Proposal Submission Webhook').first().json) }) }}"
