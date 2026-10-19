@@ -3,11 +3,15 @@ import './index.css'
 import CvVisionPanel from './components/CvVisionPanel'
 import VideoPanel from './components/VideoPanel'
 import ApplicationView from './components/ApplicationView'
-import { DecisionSelect } from './components/DecisionSelect'
 import { Dashboard } from './m3/Dashboard'
 import { TalentPool } from './m3/TalentPool'
 import { AllCandidates } from './m3/AllCandidates'
 import { HeroCard } from './m3/HeroCard'
+import { DecisionsTab } from './components/DecisionsTab'
+import { SettingsTab } from './components/SettingsTab'
+import { CorpusTab } from './components/CorpusTab'
+import { ArbitrationTab } from './components/ArbitrationTab'
+import { N8nTab } from './components/N8nTab'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 const apiUrl = (path: string) => `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
@@ -92,19 +96,7 @@ const parseJsonResponse = async <T,>(response: Response, fallback: T): Promise<T
   }
 }
 
-function SubmittedApplicationPanel({ candidate, status, statusClass }: { candidate: Application; status: string; statusClass: (value: string) => string }) {
-  const c = candidate as Record<string, any>
-  const value = (entry: any) => Array.isArray(entry) ? entry.length ? entry.map(item => typeof item === 'object' ? Object.entries(item).map(([key, field]) => `${key}: ${field ?? 'Not provided'}`).join(', ') : String(item)).join(' · ') : 'Not provided' : entry === 0 ? '0' : entry === false ? 'No' : entry === undefined || entry === null || entry === '' ? 'Not provided' : String(entry)
-  const sections: [string, [string, any][]][] = [
-    ['General information', [['Record label', c.local_test_label || c.demo_dataset], ['Applicant name', c.applicant_name], ['Email', c.email || c.student_email], ['Phone', c.phone], ['Citizenship', c.citizenship], ['Date of birth', c.birthDate || c.birth_date], ['Sex', c.sex], ['Application status', c.application_status || status], ['Submitted at', c.submitted_at || c.submittedAt || c.created_at || c.ground_truth?.submitted_at], ['Updated at', c.updated_at || c.submitted_at || c.submittedAt || c.ground_truth?.updated_at]]],
-    ['Education', [['Institution', c.school || c.institution], ['Degree / track', c.degreeTrack || c.degree_track || c.major], ['Major', c.major], ['Graduation year', c.graduationYear || c.graduation_year], ['GPA', c.gpa], ['All education entries', c.education_entries || c.educationEntries]]],
-    ['Experience', [['Project title', c.title || c.projectTitle], ['Academic / research experiences', c.academic_experiences || c.academicExperiences || c.purpose_statement], ['Leadership / community experiences', c.leadership_experiences || c.leadershipExperiences || c.leadership_statement]]],
-    ['CV deposit', [['CV filename', c.cv_filename || c.cvFileName], ['CV / PDF URL', c.pdf_url || c.cv_pdf_url || c.cv_url], ['CV content', c.cv_latex ? 'Provided' : undefined]]],
-    ['Financial / request details', [['Requested grant', c.requested_grant], ['Cost of attendance', c.financials?.cost_of_attendance], ['Parent share', c.financials?.parent_share], ['Student share', c.financials?.student_share], ['Outside scholarships', c.financials?.outside_scholarships], ['Computer allowance', c.financials?.computer_allowance], ['Demonstrated need', c.financials?.demonstrated_need]]],
-    ['Video submission', [['Video URL', c.video_url], ['Video status', c.video_status || c.videoStatus || (c.video_url ? 'Submitted' : 'Not provided')], ['Demo media source', c.video_url ? 'Submitted candidate recording' : c.video_metadata?.source || 'Demo artifact'], ['Playback source', c.video_url || c.video_metadata?.playback || 'Local generated demo video'], ['Video transcript', c.video_transcript || c.transcript], ['Video duration', c.video_duration || c.videoDuration]]]
-  ]
-  return <article className="evidence-card full-evidence submitted-inventory"><div className="evidence-title"><div><span className="eyebrow">Candidate record</span><h3>Submitted application</h3><p>Complete input inventory for {candidate.applicant_name} · {candidate.id}</p></div><span className={`audit-status ${statusClass(status)}`}>{status}</span></div><div className="submission-inventory-grid">{sections.map(([heading, fields]) => <section key={heading}><span className="eyebrow">{heading}</span><dl>{fields.map(([label, fieldValue]) => <div key={label}><dt>{label}</dt><dd>{value(fieldValue)}</dd></div>)}</dl></section>)}</div></article>
-}
+
 
 const getUserDraftKey = (email: string) => `openDoorsDraft_${email.toLowerCase().trim()}`
 const getUserStatusKey = (email: string) => `openDoorsStatus_${email.toLowerCase().trim()}`
@@ -146,8 +138,6 @@ export function App() {
   const [ragQuery, setRagQuery] = useState('')
   const [ragResults, setRagResults] = useState<any[]>([])
   const [ragLoading, setRagLoading] = useState(false)
-  const [auditSearch, setAuditSearch] = useState('')
-  const [auditStatusFilter, setAuditStatusFilter] = useState('All statuses')
   const [auditPanel, setAuditPanel] = useState<'profile' | 'submitted' | 'cv' | 'video' | 'rag' | 'verification' | 'decision'>('cv')
   const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false)
   const [auditArtifacts, setAuditArtifacts] = useState<Record<string, any>>({})
@@ -178,14 +168,13 @@ export function App() {
   // CV Deposit State (LaTeX / ATS / PDF Preview)
   const [studentCvLatex, setStudentCvLatex] = useState<string>('')
   const [cvFilePreviewUrl, setCvFilePreviewUrl] = useState<string | null>(null)
-  const [cvAtsResult, setCvAtsResult] = useState<any>(null)
-  const [isParsingCv, setIsParsingCv] = useState<boolean>(false)
+
   const [cvParseError, setCvParseError] = useState<string | null>(null)
   const [videoError, setVideoError] = useState<string | null>(null)
 
   // Video Motivation Feature: Modal & workflow states
   const [activeVideoModal, setActiveVideoModal] = useState<'none' | 'record' | 'upload'>('none')
-  const [videoFeatureEnabled, setVideoFeatureEnabled] = useState<boolean>(true)
+
   const [isRecording, setIsRecording] = useState<boolean>(false)
   const [recordingSeconds, setRecordingSeconds] = useState<number>(0)
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
@@ -755,10 +744,7 @@ export function App() {
   const currentAudit = auditCandidate ? candidateAuditRuns[auditCandidate.id] : undefined
   const auditTokenUsage = currentAudit?.token_usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
   const auditTokenLabel = `${Number(auditTokenUsage.total_tokens || 0).toLocaleString()} tokens · ${Number(auditTokenUsage.prompt_tokens || 0).toLocaleString()} in / ${Number(auditTokenUsage.completion_tokens || 0).toLocaleString()} out`
-  const automaticOpinion = ['review_technical', 'review_impact', 'review_budget']
-    .map(key => currentAudit?.results?.[key]?.summary)
-    .filter(Boolean)
-    .join(' ')
+
   const pipelineStageRows = [
     ['cv_ocr', 'CV parsing'],
     ['video_transcription', 'Video transcription'],
@@ -831,36 +817,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
   }
   const streamOverallOpinion = async () => { if (!auditCandidate) return; const id = auditCandidate.id; setOpinionLoading(current => ({ ...current, [id]: true })); try { const res = await fetch(apiUrl('/api/admin/overall-opinion'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate: { ...auditCandidate, verification: auditArtifacts[id]?.verification || {} }, transcript: auditArtifacts[id]?.video || {} }) }); const data = await res.json(); const text = data.opinion || 'No opinion returned; human review remains required.'; setOverallOpinion(current => ({ ...current, [id]: '' })); for (let i = 0; i < text.length; i += 5) { await new Promise(resolve => setTimeout(resolve, 18)); setOverallOpinion(current => ({ ...current, [id]: text.slice(0, i + 5) })) } } catch { setOverallOpinion(current => ({ ...current, [id]: 'AI opinion unavailable. Human review remains required.' })) } finally { setOpinionLoading(current => ({ ...current, [id]: false })) } }
 
-  // Parse Deposited CV in the Student Portal
-  const handleParseCv = async (contentToParse?: string, candidateId?: string) => {
-    setIsParsingCv(true)
-    setCvParseError(null)
-    const cvText = contentToParse || studentCvLatex
-    try {
-      const res = await fetch(apiUrl('/api/student/parse-cv'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cv_content: cvText,
-          form_data: {
-            applicant_name: studentName,
-            gpa: Number(studentGpa),
-            major: studentMajor,
-            id: candidateId
-          },
-        })
-      })
-      const data = await res.json()
-      setCvAtsResult(data)
-      return data
-    } catch (err: any) {
-      console.warn('CV Parse unavailable; using local preview.', err)
-      setCvAtsResult({ ats_parsed: { format: 'PDF', ats_parsability_score: null, extracted_gpa: null, degrees: [], honors_awards: [], extraction_error: 'Live parser unavailable; no synthetic fields were generated.' } })
-      setCvParseError('Live parsing is unavailable, so we created a local preview. You can continue and retry later.')
-    } finally {
-      setIsParsingCv(false)
-    }
-  }
 
   // Handle Dynamic Student Form Submission
   const handleStudentSubmit = async (e: React.FormEvent) => {
@@ -1416,7 +1372,7 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 <button
                   type="button"
                   className={`m3-nav-sub-item ${adminTab === 'audit' && candidateView === 'all' ? 'active' : ''}`}
-                  onClick={() => { setCandidateView('all'); setAuditStatusFilter('All statuses'); setAdminTab('audit') }}
+                  onClick={() => { setCandidateView('all'); setAdminTab('audit') }}
                 >All candidates</button>
                 <button
                   type="button"
@@ -1427,82 +1383,9 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
             </div>
             <div className={`m3-nav-item ${adminTab === 'corpus' ? 'active' : ''}`} title="Rules" onClick={() => setAdminTab('corpus')}><span className="material-symbols-outlined">hub</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Rules</div></div></div>
             <div className={`m3-nav-item ${adminTab === 'settings' ? 'active' : ''}`} title="Settings" onClick={() => setAdminTab('settings')}><span className="material-symbols-outlined">settings</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Settings</div></div></div>
-            {false && <>
-            <div
-              className={`m3-nav-item ${adminTab === 'dossiers' ? 'active' : ''}`}
-              onClick={() => setAdminTab('dossiers')}
-            >
-              <span className="material-symbols-outlined">folder_shared</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Applicant Dossiers</div>
-              </div>
-            </div>
-            </>}
-
-            {false && <>
-            <div
-              className={`m3-nav-item ${adminTab === 'multimodal' ? 'active' : ''}`}
-              onClick={() => {
-                setAdminTab('multimodal')
-                if (selectedProposal) triggerMultimodalVerification(selectedProposal)
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ color: '#0284c7' }}>layers</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Multimodal Verification</div>
-              </div>
-            </div>
-
-            <div
-              className={`m3-nav-item ${adminTab === 'compliance' ? 'active' : ''}`}
-              onClick={() => setAdminTab('compliance')}
-            >
-              <span className="material-symbols-outlined">verified</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Compliance & Need Audit</div>
-              </div>
-            </div>
-
-            {false && <div
-              className={`m3-nav-item ${adminTab === 'deliberation' ? 'active' : ''}`}
-              onClick={() => setAdminTab('deliberation')}
-            >
-              <span className="material-symbols-outlined">group_work</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Multi-Agent Evaluation</div>
-              </div>
-            </div>}
-
-            <div
-              className={`m3-nav-item ${adminTab === 'arbitration' ? 'active' : ''}`}
-              onClick={() => setAdminTab('arbitration')}
-            >
-              <span className="material-symbols-outlined">gavel</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Chair Arbitration & Sign-off</div>
-              </div>
-            </div>
-
-            <div
-              className={`m3-nav-item ${adminTab === 'n8n' ? 'active' : ''}`}
-              onClick={() => setAdminTab('n8n')}
-            >
-              <span className="material-symbols-outlined" style={{ color: '#f59e0b' }}>hub</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>n8n Low-Code Pipeline</div>
-              </div>
-            </div>
-
-            <div
-              className={`m3-nav-item ${adminTab === 'corpus' ? 'active' : ''}`}
-              onClick={() => setAdminTab('corpus')}
-            >
-              <span className="material-symbols-outlined">policy</span>
-              <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Official Corpus & PDFs</div>
-              </div>
-            </div>
-            </>}
+            <div className={`m3-nav-item ${adminTab === 'decisions' ? 'active' : ''}`} title="Decisions" onClick={() => setAdminTab('decisions')}><span className="material-symbols-outlined">gavel</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Decisions</div></div></div>
+            <div className={`m3-nav-item ${adminTab === 'arbitration' ? 'active' : ''}`} title="Chair Arbitration" onClick={() => setAdminTab('arbitration')}><span className="material-symbols-outlined">verified</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Chair Arbitration</div></div></div>
+            <div className={`m3-nav-item ${adminTab === 'n8n' ? 'active' : ''}`} title="n8n Pipeline" onClick={() => setAdminTab('n8n')}><span className="material-symbols-outlined" style={{ color: '#f59e0b' }}>hub</span><div><div style={{ fontSize: '0.86rem', fontWeight: 700 }}>n8n Pipeline</div></div></div>
           </nav>
 
         )}
@@ -2219,371 +2102,6 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
           </div>
         )}
 
-        {false && portalMode === 'student' && (
-          <div style={{ padding: '28px 36px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div className="m3-card">
-              <div className="m3-card-title-row">
-                <div>
-                  <h2>Student Fellowship Application Dossier</h2>
-                  <span className="m3-subtitle">
-                    Enter your academic credentials, deposit your ATS/LaTeX CV, review financials, and record your video pitch
-                  </span>
-                </div>
-                <span className="m3-badge m3-badge-primary">Applicant View</span>
-              </div>
-
-              {submitStatus && (
-                <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '12px 16px', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600 }}>
-                  {submitStatus}
-                </div>
-              )}
-
-              <form onSubmit={handleStudentSubmit} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
-                {/* Academic & Narrative Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Full Legal Name:</label>
-                      <input
-                        type="text"
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Yale School / College:</label>
-                      <input
-                        type="text"
-                        value={studentSchool}
-                        onChange={(e) => setStudentSchool(e.target.value)}
-                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: 12 }}>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Major / Academic Department:</label>
-                      <input
-                        type="text"
-                        value={studentMajor}
-                        onChange={(e) => setStudentMajor(e.target.value)}
-                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Cumulative GPA (4.0 Scale):</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="2.0"
-                        max="4.0"
-                        value={studentGpa}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value)
-                          setStudentGpa(val)
-                        }}
-                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Fellowship / Research Project Title:</label>
-                    <input
-                      type="text"
-                      value={projectTitle}
-                      onChange={(e) => setProjectTitle(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }}
-                      required
-                    />
-                  </div>
-
-                  {/* ----------------------------------------------------------------- */}
-                  {/* ATS & LATEX CV DEPOSIT SPACE                                      */}
-                  {/* ----------------------------------------------------------------- */}
-                  <div style={{ border: '2px dashed #93c5fd', borderRadius: 12, padding: 16, background: '#f8fafc' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span className="material-symbols-outlined" style={{ color: '#0284c7' }}>description</span>
-                        <strong style={{ fontSize: '0.92rem', color: '#0369a1' }}>
-                          Curriculum Vitae (CV / Resume) Deposit — ATS / LaTeX {isParsingCv && '(Parsing ATS...)'}
-                        </strong>
-                      </div>
-                      <span className="m3-badge m3-badge-primary">Multimodal Source</span>
-                    </div>
-
-                    <p style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 10 }}>
-                      Deposit your CV in LaTeX markup or standard ATS text format. Our multimodal AI engine parses GPA, education, and research citations automatically.
-                    </p>
-
-                    {/* File Upload & Clear */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10, alignItems: 'center' }}>
-                      <label style={{ fontSize: '0.74rem', background: '#e2e8f0', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload_file</span>
-                        Upload CV (.tex / .txt / .json)
-                        <input type="file" accept=".tex,.txt,.json" onChange={handleCvFileUpload} style={{ display: 'none' }} />
-                      </label>
-                      {studentCvLatex && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setStudentCvLatex('')
-                            setCvAtsResult(null)
-                          }}
-                          className="m3-btn m3-btn-outlined"
-                          style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                        >
-                          Clear editor
-                        </button>
-                      )}
-                    </div>
-
-                    {/* LaTeX Editor */}
-                    <textarea
-                      rows={6}
-                      value={studentCvLatex}
-                      onChange={(e) => {
-                        setStudentCvLatex(e.target.value)
-                      }}
-                      onBlur={() => handleParseCv()}
-                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.78rem', fontFamily: 'monospace', background: '#ffffff', lineHeight: 1.4 }}
-                      placeholder="Paste your \documentclass[11pt]{article}... LaTeX or plain text resume here."
-                    />
-
-                    {/* Live ATS Extraction Feedback */}
-                    {cvAtsResult && cvAtsResult.ats_parsed && (
-                      <div style={{ marginTop: 10, padding: 10, background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                            ATS Extracted Entities ({cvAtsResult.ats_parsed.format}):
-                          </span>
-                          <span className="m3-badge m3-badge-success" style={{ fontSize: '0.7rem' }}>
-                            ATS Parsability: {cvAtsResult.ats_parsed.ats_parsability_score}/100
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 12, fontSize: '0.76rem', color: '#475569', flexWrap: 'wrap' }}>
-                          <span>Extracted GPA: <strong>{cvAtsResult.ats_parsed.extracted_gpa !== null ? cvAtsResult.ats_parsed.extracted_gpa : 'Not Detected'}</strong></span>
-                          <span>Degrees: <strong>{cvAtsResult.ats_parsed.degrees.join(', ') || 'Undergraduate'}</strong></span>
-                          <span>Honors: <strong>{cvAtsResult.ats_parsed.honors_awards.join(', ') || 'Standard'}</strong></span>
-                        </div>
-
-                        {/* Multimodal Warning Badge if Form GPA diverges from CV GPA */}
-                        {cvAtsResult.ats_parsed.extracted_gpa !== null && Math.abs(studentGpa - cvAtsResult.ats_parsed.extracted_gpa) >= 0.25 && (
-                          <div style={{ marginTop: 6, padding: '4px 8px', background: '#fee2e2', color: '#991b1b', borderRadius: 6, fontSize: '0.72rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
-                            Multimodal Inconsistency Detected: Form GPA ({studentGpa}) does not match CV ({cvAtsResult.ats_parsed.extracted_gpa})!
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Academic Statement & Research Purpose:</label>
-                    <textarea
-                      rows={3}
-                      value={purposeStatement}
-                      onChange={(e) => setPurposeStatement(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.84rem' }}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Study Plan & Feasibility Timeline:</label>
-                    <textarea
-                      rows={3}
-                      value={studyPlan}
-                      onChange={(e) => setStudyPlan(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.84rem' }}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>Leadership, Civic & Community Impact:</label>
-                    <textarea
-                      rows={2}
-                      value={leadershipStatement}
-                      onChange={(e) => setLeadershipStatement(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.84rem' }}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Financial Aid & Video Motivation Pitch */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {/* Financial Need Breakdown */}
-                  <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                      <span className="material-symbols-outlined" style={{ color: '#00356b' }}>attach_money</span>
-                      <strong style={{ fontSize: '0.92rem' }}>Yale SFS Need-Based Calculation Data</strong>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                      <div>
-                        <label style={{ fontSize: '0.74rem', color: '#64748b' }}>Family Annual Income ($):</label>
-                        <input
-                          type="number"
-                          value={parentIncome}
-                          onChange={(e) => setParentIncome(Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '0.74rem', color: '#64748b' }}>Requested Grant ($):</label>
-                        <input
-                          type="number"
-                          value={requestedGrant}
-                          onChange={(e) => setRequestedGrant(Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <div>
-                        <label style={{ fontSize: '0.74rem', color: '#64748b' }}>Outside Scholarships ($):</label>
-                        <input
-                          type="number"
-                          value={outsideScholarships}
-                          onChange={(e) => setOutsideScholarships(Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '0.74rem', color: '#64748b' }}>Tech Purchase ($2,500 max):</label>
-                        <input
-                          type="number"
-                          value={techPurchaseRequested}
-                          onChange={(e) => setTechPurchaseRequested(Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Video Motivation Letter Box */}
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, background: '#ffffff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span className="material-symbols-outlined" style={{ color: '#00356b' }}>videocam</span>
-                        <strong style={{ fontSize: '0.92rem' }}>2-Minute Video Motivation Letter</strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setVideoFeatureEnabled(!videoFeatureEnabled)}
-                        className={`m3-btn ${videoFeatureEnabled ? 'm3-btn-primary' : 'm3-btn-outlined'}`}
-                        style={{ padding: '4px 10px', fontSize: '0.72rem' }}
-                      >
-                        {videoFeatureEnabled ? 'Video Mode: ACTIVE' : 'Video Mode: OFF'}
-                      </button>
-                    </div>
-
-                    {!videoFeatureEnabled ? (
-                      <div style={{ background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: 10, padding: 16, textAlign: 'center' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 32, color: '#94a3b8' }}>videocam_off</span>
-                        <p style={{ fontSize: '0.82rem', color: '#64748b', marginTop: 4 }}>
-                          Video camera recording is currently off. Click 'Video Mode' when you wish to record.
-                        </p>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <div style={{ background: '#0f172a', borderRadius: 10, padding: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div className="video-stage" style={{ width: '100%', borderRadius: 8, overflow: 'hidden' }}>
-                            <video
-                              ref={videoPreviewRef}
-                              className="video-preview"
-                              muted
-                              playsInline
-                              style={{ borderRadius: 8, objectFit: 'contain', aspectRatio: '16 / 9' }}
-                            />
-                          </div>
-                          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                            {!isRecording ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={startRecording}
-                                  className="m3-btn m3-btn-primary"
-                                  style={{ padding: '4px 12px', fontSize: '0.76rem', background: '#dc2626' }}
-                                >
-                                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>fiber_manual_record</span>
-                                  Record video
-                                </button>
-                                <button
-                                  type="button"
-                                  className="m3-btn m3-btn-outlined"
-                                  style={{ padding: '4px 12px', fontSize: '0.76rem', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a' }}
-                                  onClick={() => videoUploadInputRef.current?.click()}
-                                >
-                                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload_file</span>
-                                  Upload video
-                                </button>
-                                <input
-                                  ref={videoUploadInputRef}
-                                  type="file"
-                                  accept="video/*"
-                                  hidden
-                                  onChange={handleVideoFileUpload}
-                                />
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={stopRecording}
-                                className="m3-btn m3-btn-filled"
-                                style={{ padding: '4px 12px', fontSize: '0.76rem', background: '#eab308', color: '#000' }}
-                              >
-                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>stop</span>
-                                Stop & Save
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {videoError && (
-                          <div className="inline-error" style={{ marginTop: 8 }}>
-                            <span className="material-symbols-outlined">error</span>
-                            <span>{videoError}</span>
-                          </div>
-                        )}
-
-                        {recordedVideoUrl && (
-                          <div style={{ fontSize: '0.78rem', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
-                            Video captured and ready for submission.
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div style={{ marginTop: 10 }}>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="m3-btn m3-btn-filled"
-                    style={{ background: '#00356b', color: '#ffffff', width: '100%', padding: '12px 18px', fontSize: '0.92rem', fontWeight: 700 }}
-                  >
-                    <span className="material-symbols-outlined">send</span>
-                    Submit Complete Dossier & CV to Yale Fellowship Board
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* ============================================================= */}
         {/* VIEW 2: COMMITTEE ADMIN CONSOLE                               */}
         {/* ============================================================= */}
@@ -2591,25 +2109,16 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
           <div style={{ padding: '24px 32px' }}>
             {adminTab === 'overview' && <Dashboard proposals={proposals} statusForCandidate={statusForCandidate} decisionForCandidate={decisionForCandidate} onOpenCandidate={openCandidateAudit} onGoTo={setAdminTab} onRunBatch={runBatchDemoAudit} />}
             {adminTab === 'decisions' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <HeroCard
-                  total={proposals.length}
-                  needsReview={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                  title="Committee Decision Register"
-                  subtitle="Candidate-keyed recommendations, score calibrations, and chair binding sign-offs."
-                  onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                  actions={[
-                    { label: 'Batch audit', icon: 'play_circle', onClick: runBatchDemoAudit },
-                    { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Chair sign-off', icon: 'verified', onClick: () => setAdminTab('arbitration') },
-                    { label: 'RAG rules', icon: 'policy', onClick: () => setAdminTab('corpus') },
-                  ]}
-                />
-                <div className="admin-decisions dossier-panel">
-                  <div className="overview-intro"><div><span className="eyebrow">Committee decisions · Application 2026</span><h2>Decision register</h2><p>Candidate-keyed recommendations and chair sign-offs.</p></div><button className="m3-btn m3-btn-primary" onClick={() => setAdminTab('audit')}>Open audit workspace</button></div>
-                  <div className="decisions-table-wrap"><table className="decisions-table"><thead><tr><th>Candidate</th><th>Track / GPA</th><th>Audit status</th><th>Recommendation</th><th>Score</th><th>Sign-off</th><th>Requested grant</th><th></th></tr></thead><tbody>{proposals.map(p => { const decision = decisionForCandidate(p); const recommendation = decision?.decision || 'Pending'; return <tr key={p.id}><td><strong>{p.applicant_name || p.id}</strong><small>{p.id}</small></td><td>{p.major}<br /><small>GPA {p.gpa?.toFixed(2) || '—'}</small></td><td><span className={`audit-status ${statusClass(statusForCandidate(p))}`}>{statusForCandidate(p)}</span></td><td><span className={`recommendation-chip ${recommendationClass(recommendation)}`}>{recommendation}</span></td><td>{decision?.score ? `${decision.score.toFixed(1)} / 5.0` : '—'}</td><td>{decision?.signedOffAt ? new Date(decision.signedOffAt).toLocaleString() : 'Not signed off'}</td><td>${p.requested_grant?.toLocaleString() || '—'}</td><td><button className="text-button" onClick={() => openCandidateAudit(p.id, 'decision')}>Open <span className="material-symbols-outlined">arrow_forward</span></button></td></tr> })}</tbody></table>{!proposals.length && <div className="audit-empty"><span className="material-symbols-outlined">gavel</span><strong>No decisions yet</strong><small>Candidate decisions will appear here after chair sign-off.</small></div>}</div>
-                </div>
-              </div>
+              <DecisionsTab
+                proposals={proposals}
+                statusForCandidate={statusForCandidate}
+                decisionForCandidate={decisionForCandidate}
+                statusClass={statusClass}
+                recommendationClass={recommendationClass}
+                onOpenCandidate={openCandidateAudit}
+                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+                onRunBatch={runBatchDemoAudit}
+              />
             )}
             {adminTab === 'audit' && candidateView === 'pools' && (
               <TalentPool
@@ -2628,200 +2137,14 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
                 onAddCandidate={() => window.alert('Candidate intake is submitted through the applicant portal.')}
               />
             )}
-            {false && <div className="audit-workspace">
-              <section className="audit-queue dossier-panel">
-                <div className="audit-section-head"><div><span className="eyebrow">01 · Queue</span><h2>Candidate review queue</h2><p>Choose a dossier to audit across every evidence source.</p></div><span className="audit-count">{proposals.length} candidate{proposals.length === 1 ? '' : 's'}</span></div>
-                <div className="audit-controls"><label className="audit-search"><span className="material-symbols-outlined">search</span><input placeholder="Search candidate or ID" value={auditSearch} onChange={e => setAuditSearch(e.target.value)} /></label><select value={auditStatusFilter} onChange={e => setAuditStatusFilter(e.target.value)}><option>All statuses</option><option>Needs review</option><option>In review</option><option>Verified</option><option>Decision needed</option><option>Submitted</option></select></div>
-                
-                <div className="candidate-queue">
-                  {proposals.filter(p => `${p.applicant_name} ${p.id}`.toLowerCase().includes(auditSearch.toLowerCase()) && (auditStatusFilter === 'All statuses' || statusForCandidate(p) === auditStatusFilter)).map((p) => (
-                    <button type="button" className={`candidate-row ${selectedProposal?.id === p.id ? 'selected' : ''}`} key={p.id} onClick={() => { void handleOpenCandidateModal(p) }}>
-                      <span className="candidate-avatar">{(p.applicant_name || p.id).slice(0, 2).toUpperCase()}</span>
-                      <span className="candidate-main"><strong>{p.applicant_name || p.id}</strong><small>{p.id} · {p.major || 'Applicant track'}</small></span>
-                      <span className="candidate-gpa">GPA {p.gpa?.toFixed(2) || '—'}</span>
-                      <span className={`audit-status ${statusClass(statusForCandidate(p))}`}>{statusForCandidate(p)}</span>
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </button>
-                  ))}
-                  {proposals.filter(p => `${p.applicant_name} ${p.id}`.toLowerCase().includes(auditSearch.toLowerCase()) && (auditStatusFilter === 'All statuses' || statusForCandidate(p) === auditStatusFilter)).length === 0 && (
-                    <div className="audit-empty">
-                      <span className="material-symbols-outlined">{proposals.length === 0 ? 'inbox' : 'search_off'}</span>
-                      <strong>{proposals.length === 0 ? 'No candidates submitted yet' : 'No candidates match this filter'}</strong>
-                      <small>{proposals.length === 0 ? 'Submitted applications from applicants will appear here in the review queue.' : 'Try another status or clear the search.'}</small>
-                    </div>
-                  )}
-                </div>
-              </section>
-              <section className="audit-detail dossier-panel">
-                <div className="audit-candidate-head"><div><span className="eyebrow">02 · Selected dossier</span><h2>{auditCandidate?.applicant_name || 'Select a candidate'}</h2><p>{auditCandidate ? `${auditCandidate.id} · ${auditCandidate.major || 'Applicant track'} · ${auditCandidate.school || 'Institution pending'} · GPA ${auditCandidate.gpa?.toFixed(2) || '—'}` : 'Choose a candidate from the queue to begin an evidence audit.'}</p>{auditCandidate && <div className="audit-header-meta"><span>{statusForCandidate(auditCandidate)}</span><span>Updated {auditCandidate.ground_truth?.updated_at || 'today'}</span><span>${auditCandidate.requested_grant?.toLocaleString() || '—'} requested</span></div>}</div><div className="audit-head-actions"><span className="mint-pill">{auditCandidate ? 'Context linked' : 'Awaiting candidate'}</span>{auditCandidate && (candidateAuditRuns[auditCandidate.id]?.status === 'complete' || candidateAuditRuns[auditCandidate.id]?.status === 'completed_with_errors') && <button className="m3-btn m3-btn-primary" onClick={() => setAuditPanel('decision')}>Open decision</button>}</div></div>
-                {auditCandidate && <><div className="audit-action-bar"><div className="audit-pipeline-head"><span><strong>Automatic audit pipeline · {currentAudit?.status === 'running' ? 'Running' : currentAudit?.status === 'complete' || currentAudit?.status === 'completed_with_errors' ? 'Complete' : 'Ready'}</strong><small>One click starts every stage in order. Live results appear as each stage finishes. Usage: {auditTokenLabel}</small></span><div className="audit-pipeline-steps" aria-label="Audit stage progress">{pipelineStageRows.map(([key, label]) => { const stage = currentAudit?.stages?.[key] || {}; const state = stage.status || 'queued'; return <span key={key} className={`audit-pipeline-step ${state}`}><i>{state === 'complete' ? '✓' : state === 'failed' ? '!' : state === 'in_progress' ? '…' : '·'}</i>{label}</span> })}</div></div><div className="audit-action-buttons"><button type="button" className="m3-btn m3-btn-primary" onClick={() => void runFullAudit()} disabled={currentAudit?.status === 'running'}><span className="material-symbols-outlined">play_arrow</span>{currentAudit?.status === 'running' ? 'Audit running…' : currentAudit?.status === 'complete' || currentAudit?.status === 'completed_with_errors' ? 'Rerun audit' : 'Run audit'}</button>{currentAudit?.status === 'running' && <button type="button" className="m3-btn m3-btn-outlined" onClick={() => void stopFullAudit()}>Stop audit</button>}</div></div><div className="audit-tabs">{[['profile','Profile & education'],['submitted','Submitted application'],['cv','CV PDF parser'],['video','Video evaluation'],['rag','RAG rule verification'],['decision','Decision']].map(([key, label]) => <button type="button" className={auditPanel === key ? 'active' : ''} key={key} onClick={() => setAuditPanel(key as any)}>{label}</button>)}</div><div className="audit-evidence">{auditPanel === 'submitted' && <SubmittedApplicationPanel candidate={auditCandidate} status={statusForCandidate(auditCandidate)} statusClass={statusClass} />}
-                  {auditPanel === 'profile' && <div className="evidence-grid"><article className="evidence-card"><span className="eyebrow">Candidate context</span><h3>Profile & education</h3><dl><dt>Applicant</dt><dd>{auditCandidate.applicant_name}</dd><dt>Institution</dt><dd>{auditCandidate.school || 'Yale College / Morse College'}</dd><dt>Track</dt><dd>{auditCandidate.major}</dd><dt>GPA</dt><dd>{auditCandidate.gpa?.toFixed(2)} / 4.00</dd><dt>Requested grant</dt><dd>${auditCandidate.requested_grant?.toLocaleString()}</dd></dl></article><article className="evidence-card attention-card"><span className="eyebrow">Audit posture</span><h3>Evidence status</h3><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>Application identity linked</span></div><div className="audit-check"><span className="material-symbols-outlined">check_circle</span><span>CV source available</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Video evaluation pending</span></div><div className="audit-check"><span className="material-symbols-outlined">pending</span><span>Institution verification pending</span></div></article></div>}
-                  {auditPanel === 'cv' && <CvVisionPanel key={auditCandidate.id} proposalId={auditCandidate.id} applicantName={auditCandidate.applicant_name} pdfUrl={artifactUrl(auditCandidate.pdf_url || `/api/proposals/${auditCandidate.id}/pdf`)} apiUrl={apiUrl} onResult={(id, result) => updateAuditArtifact(id, { cv: { status: 'parsed', source: result.document_source, parsed: result.structured, extracted: `${result.stats.box_count} OCR fields detected`, flags: [] } })} />}
-                  {auditPanel === 'video' && <VideoPanel key={auditCandidate.id} candidateId={auditCandidate.id} applicantName={auditCandidate.applicant_name} videoUrl={auditCandidate.video_url} videoFilename={auditCandidate.video_filename} transcript={auditArtifacts[auditCandidate.id]?.video || null} review={auditArtifacts[auditCandidate.id]?.video || null} stageStatuses={currentAudit?.stages || {}} busy={videoStages[auditCandidate.id] === 'running'} onRunTranscription={runVideoTranscription} onRunEvaluation={runVideoEvaluation} />}{auditPanel === 'rag' && <article className="evidence-card full-evidence candidate-rag-panel">
-                    <div className="evidence-title">
-                      <div>
-                        <span className="eyebrow">Automated RAG Fact Checker</span>
-                        <h3>Regulatory Rule Fact-Checking & Compliance Audit</h3>
-                        <p>Candidate: {auditCandidate.applicant_name} ({auditCandidate.id}) · Automated cross-check of declared qualifications against Yale SFS & Fellowship rules</p>
-                      </div>
-                      <button className="m3-btn m3-btn-primary" onClick={runRagSearch} disabled={ragLoading}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>sync</span>
-                        {ragLoading ? 'Fact-checking against RAG...' : 'Re-run RAG Fact Check'}
-                      </button>
-                    </div>
-                    <div className="rag-state-legend"><span className="state-chip match">Match</span><span className="state-chip contradiction">Contradiction</span><span className="state-chip review">Review</span><span className="state-chip missing">Missing</span></div>
-
-                    {/* Quick Automated Compliance Summary */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, margin: '18px 0' }}>
-                      <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                        <span className="artifact-label">Title IV & SAP Status</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                          <span className="material-symbols-outlined" style={{ color: (auditCandidate.gpa || 3.8) >= 3.0 ? '#16a34a' : '#dc2626', fontSize: 18 }}>
-                            {(auditCandidate.gpa || 3.8) >= 3.0 ? 'check_circle' : 'cancel'}
-                          </span>
-                          <strong style={{ fontSize: '0.86rem' }}>
-                            {(auditCandidate.gpa || 3.8) >= 3.0 ? 'GPA Satisfactory (>= 3.00)' : 'SAP Defect (< 3.00)'}
-                          </strong>
-                        </div>
-                        <small style={{ color: '#64748b', fontSize: '0.68rem', marginTop: 2, display: 'block' }}>Candidate GPA: {auditCandidate.gpa?.toFixed(2) || '3.80'}</small>
-                      </div>
-
-                      <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                        <span className="artifact-label">Budget Need Ceiling</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                          <span className="material-symbols-outlined" style={{ color: (auditCandidate.requested_grant || 0) <= 87000 ? '#16a34a' : '#d97706', fontSize: 18 }}>
-                            {(auditCandidate.requested_grant || 0) <= 87000 ? 'check_circle' : 'warning'}
-                          </span>
-                          <strong style={{ fontSize: '0.86rem' }}>
-                            ${(auditCandidate.requested_grant || 75000).toLocaleString()} Need
-                          </strong>
-                        </div>
-                        <small style={{ color: '#64748b', fontSize: '0.68rem', marginTop: 2, display: 'block' }}>Cost of Attendance Cap: $87,000</small>
-                      </div>
-
-                      <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                        <span className="artifact-label">Dossier Completeness</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                          <span className="material-symbols-outlined" style={{ color: '#16a34a', fontSize: 18 }}>verified</span>
-                          <strong style={{ fontSize: '0.86rem' }}>8 Certified Rule Sets</strong>
-                        </div>
-                        <small style={{ color: '#64748b', fontSize: '0.68rem', marginTop: 2, display: 'block' }}>Official Yale Fellowship Corpus</small>
-                      </div>
-                    </div>
-
-                    {/* Direct Fact-Checking Table against RAG Rules */}
-                    <div style={{ marginTop: 14 }}>
-                      <span className="artifact-label" style={{ marginBottom: 8, display: 'block' }}>
-                        Automated Evidence Claims Checked Against Corpus Documents
-                      </span>
-                      <div className="fact-check-table">
-                        <div className="fact-check-head" style={{ gridTemplateColumns: '1.2fr 1.6fr 1.8fr .8fr' }}>
-                          <span>Candidate Fact / Claim</span>
-                          <span>Candidate Declared Value</span>
-                          <span>Governing Rule Citation</span>
-                          <span>Audit State</span>
-                        </div>
-                        {[
-                          {
-                            claim: 'Academic Progress (SAP)',
-                            value: `Cumulative GPA: ${auditCandidate.gpa?.toFixed(2) || '3.80'} / 4.00`,
-                            rule: '05_evaluation_scoring_anchors.md: Mandatory minimum 3.00 GPA for fellowship disbursement',
-                            state: (auditCandidate.gpa || 3.8) >= 3.0 ? 'match' : 'contradiction'
-                          },
-                          {
-                            claim: 'Student Financial Need',
-                            value: `$${(auditCandidate.requested_grant || 75000).toLocaleString()} demonstrated need`,
-                            rule: '04_budget_eligibility_rules.md: Standard $3,700 student self-help and parental income expectation',
-                            state: 'match'
-                          },
-                          {
-                            claim: 'Computer / Tech Allowance',
-                            value: `$${(auditCandidate.financials?.computer_allowance || 0).toLocaleString()} hardware allocation`,
-                            rule: '04_budget_eligibility_rules.md: One-time lifetime technology purchase allowance capped at $2,500',
-                            state: (auditCandidate.financials?.computer_allowance || 0) <= 2500 ? 'match' : 'contradiction'
-                          },
-                          {
-                            claim: 'Academic Discipline & Mentor',
-                            value: `${auditCandidate.major || 'Computer Science'} · ${auditCandidate.school || 'Yale College'}`,
-                            rule: '02_technical_excellence_criteria.md: Verifiable faculty mentorship and departmental alignment',
-                            state: 'match'
-                          },
-                          {
-                            claim: 'Civic & Leadership Impact',
-                            value: auditCandidate.leadership_experiences?.[0] ? `${auditCandidate.leadership_experiences[0].slice(0, 55)}...` : 'Coordinated student volunteer technical deployments',
-                            rule: '03_impact_dissemination_criteria.md: Documented societal impact, community engagement, and public benefit',
-                            state: 'match'
-                          }
-                        ].map((item, idx) => (
-                          <div className="fact-check-row" key={idx} style={{ gridTemplateColumns: '1.2fr 1.6fr 1.8fr .8fr' }}>
-                            <strong>{item.claim}</strong>
-                            <span>{item.value}</span>
-                            <span style={{ fontSize: '0.68rem', color: '#0369a1' }}>{item.rule}</span>
-                            <b className={`state-chip ${item.state}`}>{item.state}</b>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Retrieved Context Chunks */}
-                    {ragResults.length > 0 && (
-                      <div className="rag-results" style={{ marginTop: 20 }}>
-                        <div className="artifact-label">Detailed Rule Evidence Chunks ({ragResults.length} matches)</div>
-                        {ragResults.map((result: any) => (
-                          <article className="rag-result" key={result.document}>
-                            <div>
-                              <strong>{result.document}</strong>
-                              <span className="rag-score">Relevance {result.score}</span>
-                            </div>
-                            <p>{result.snippet}</p>
-                            <small className="rule-citation">Source document · {result.document}</small>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="human-decision-note" style={{ marginTop: 18 }}>
-                      <strong>Automated RAG Fact Check Complete</strong>
-                      <span>All claims were automatically referenced against the Yale regulatory corpus. No manual query typing required; the panel chair uses these verified facts to record the final authorization.</span>
-                    </div>
-                  </article>}
-
-                  {auditPanel === 'decision' && <article className="evidence-card full-evidence"><div className="evidence-title"><div><span className="eyebrow">03 · Human chair decision</span><h3>Decision panel</h3><p>All automated evidence and advisory reviews are summarized here before the chair signs.</p></div><span className="mint-pill">{auditCandidate.id}</span></div><div className="decision-summary"><div><span className="artifact-label">Advisory reviews</span><strong>{Object.keys(currentAudit?.results || {}).filter(key => key.startsWith('review_')).length} / {(auditCandidate.budget && Object.keys(auditCandidate.budget || {}).length) ? 3 : 2} complete</strong></div><div><span className="artifact-label">Recommendation</span><DecisionSelect value={auditDecision} onChange={setAuditDecision} /></div><div><span className="artifact-label">Score</span><strong>{overrideScore.toFixed(1)} / 5.0</strong></div></div><div className="audit-review-feed"><div className="audit-review-feed-head"><span className="artifact-label">Automated review output</span><small>Advisory only · human chair decides</small></div>{[['review_technical','Technical'],['review_impact','Impact'], ...((auditCandidate.budget && Object.keys(auditCandidate.budget || {}).length) ? [['review_budget','Budget']] : [])].map(([key,label]) => { const item = currentAudit?.results?.[key]; const stage = currentAudit?.stages?.[key]?.status || 'queued'; return <section className={`audit-review-item ${stage}`} key={key}><div><strong>{label}</strong><span>{stage === 'complete' ? 'Complete' : stage === 'in_progress' ? 'Running…' : stage === 'failed' ? 'Failed' : 'Queued'}</span></div><p>{item?.summary || currentAudit?.stages?.[key]?.error || 'Waiting for this review to run.'}</p></section> })}</div><div className="ai-opinion-panel"><div><span className="artifact-label">AI overall opinion · streamed advisory</span><p>{overallOpinion[auditCandidate.id] || automaticOpinion || 'Waiting for the automated reviews to produce an evidence-grounded summary.'}</p></div><button type="button" className="m3-btn m3-btn-outlined" onClick={streamOverallOpinion} disabled={opinionLoading[auditCandidate.id]}>{opinionLoading[auditCandidate.id] ? 'Streaming…' : 'Stream AI opinion'}</button></div><label className="audit-notes"><span>Reviewer notes</span><textarea rows={4} value={auditNotes} onChange={e => setAuditNotes(e.target.value)} placeholder="Record the evidence behind your recommendation." /></label>{decisionForCandidate(auditCandidate)?.signedOffAt && <div className="verified-banner"><span className="material-symbols-outlined">verified</span>Signed off for {auditCandidate.applicant_name} at {new Date(decisionForCandidate(auditCandidate)!.signedOffAt!).toLocaleString()}</div>}<button className="m3-btn m3-btn-primary" onClick={() => { persistCandidateDecision(auditCandidate); setIsSignedOff(true) }}>{decisionForCandidate(auditCandidate)?.signedOffAt ? 'Update chair decision' : 'Authorize decision'}</button></article>}
-                </div></>}
-              </section>
-            </div>}
             {/* TAB: SETTINGS */}
             {adminTab === 'settings' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <HeroCard
-                  total={proposals.length}
-                  needsReview={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                  title="Committee Workspace Settings"
-                  subtitle="Workspace preferences, committee accounts, and automated evidence audit pipeline thresholds."
-                  onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                  actions={[
-                    { label: 'Overview', icon: 'space_dashboard', onClick: () => setAdminTab('overview') },
-                    { label: 'Candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'RAG rules', icon: 'policy', onClick: () => setAdminTab('corpus') },
-                    { label: 'Decisions', icon: 'gavel', onClick: () => setAdminTab('decisions') },
-                  ]}
-                />
-                <div className="admin-settings dossier-panel">
-                  <div className="overview-intro">
-                    <div>
-                      <span className="eyebrow">Committee workspace</span>
-                      <h2>Settings</h2>
-                      <p>Workspace preferences, committee accounts and audit pipeline configuration.</p>
-                    </div>
-                    <span className="audit-count">Coming soon</span>
-                  </div>
-                  <div className="audit-empty">
-                    <span className="material-symbols-outlined">settings</span>
-                    <strong>No workspace settings available yet</strong>
-                    <small>Account details, notification preferences and pipeline thresholds will be editable here once the settings service is connected.</small>
-                  </div>
-                </div>
-              </div>
+              <SettingsTab
+                totalCandidates={proposals.length}
+                needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
+                onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
+                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+              />
             )}
             {/* TAB: SCHOLARSHIPS */}
             {adminTab === 'scholarships' && (
@@ -3360,391 +2683,65 @@ try { const res = await fetch(apiUrl('/api/admin/extract-video-transcript'), { m
 
             {/* TAB: CHAIR ARBITRATION & SIGN-OFF */}
             {adminTab === 'arbitration' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <HeroCard
-                  total={proposals.length}
-                  needsReview={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                  title="Fellowship Committee Chair Arbitration & Final Authorization"
-                  subtitle="Cohort ranking, disagreement arbitration, composite score calibration, and binding digital signature."
-                  onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                  actions={[
-                    { label: 'Batch audit', icon: 'play_circle', onClick: runBatchDemoAudit },
-                    { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Decisions', icon: 'gavel', onClick: () => setAdminTab('decisions') },
-                    { label: 'RAG rules', icon: 'policy', onClick: () => setAdminTab('corpus') },
-                  ]}
-                />
-                <div className="m3-card">
-                <div className="m3-card-title-row">
-                  <div>
-                    <h2>Fellowship Committee Chair Arbitration & Final Authorization</h2>
-                    <span className="m3-subtitle">Cohort ranking, disagreement arbitration, and binding digital signature</span>
-                  </div>
-                  <span className={`m3-badge ${isSignedOff ? 'm3-badge-success' : 'm3-badge-warning'}`}>
-                    {isSignedOff ? 'CHAIR SIGNED-OFF' : 'AWAITING AUTHORIZATION'}
-                  </span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, padding: 18, background: '#ffffff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <strong style={{ fontSize: '1rem' }}>Cohort Ranking ({proposals.length} Candidates)</strong>
-                      <span className="m3-badge m3-badge-primary">40% Academic • 35% Impact • 25% Need</span>
-                    </div>
-
-                    <div style={{ maxHeight: 380, overflowY: 'auto' }}>
-                      <table className="m3-ranking-table">
-                        <thead>
-                          <tr>
-                            <th>Rank</th>
-                            <th>Applicant</th>
-                            <th>Major</th>
-                            <th>GPA</th>
-                            <th>Score</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sortedCohort.map((p, idx) => {
-                            const score = p.ground_truth?.consensus_score || 3.5
-                            const isFunded = score >= 4.0
-                            return (
-                              <tr key={p.id}>
-                                <td><strong>#{idx + 1}</strong></td>
-                                <td><span className="m3-badge m3-badge-neutral">{p.applicant_name || p.id}</span></td>
-                                <td style={{ fontSize: '0.8rem' }}>{p.major || 'Liberal Arts'}</td>
-                                <td><strong>{p.gpa?.toFixed(2) || '3.8'}</strong></td>
-                                <td><strong>{score.toFixed(1)}</strong></td>
-                                <td>
-                                  <span className={`m3-badge ${isFunded ? 'm3-badge-success' : 'm3-badge-warning'}`}>
-                                    {isFunded ? 'FUND' : 'RESERVE'}
-                                  </span>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, padding: 18, background: '#ffffff', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <strong style={{ fontSize: '1rem' }}>Chair Authorization Form: {selectedProposal?.applicant_name}</strong>
-
-                    <div>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Composite Score:</span> <strong>{overrideScore.toFixed(1)} / 5.0</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="5"
-                        step="0.1"
-                        value={overrideScore}
-                        onChange={(e) => setOverrideScore(parseFloat(e.target.value))}
-                        style={{ width: '100%' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>
-                        Final Decision Recommendation:
-                      </label>
-                      <select
-                        value={overrideDecision}
-                        onChange={(e) => setOverrideDecision(e.target.value as any)}
-                        className="m3-select"
-                        style={{ width: '100%', border: '1px solid #cbd5e1' }}
-                      >
-                        <option value="FUND">FUND — Full Yale Fellowship Approved</option>
-                        <option value="RESERVE">RESERVE — Alternate Candidate Pool</option>
-                        <option value="REJECT">REJECT — Defect / SAP Ineligible</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700, display: 'block', marginBottom: 4 }}>
-                        Official Committee Decision Letter:
-                      </label>
-                      <textarea
-                        rows={5}
-                        value={overrideNotes}
-                        onChange={(e) => setOverrideNotes(e.target.value)}
-                        style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.8rem', lineHeight: 1.5 }}
-                      />
-                    </div>
-
-                    <button
-                      className="m3-btn m3-btn-primary"
-                      style={{ background: '#00356b' }}
-                      onClick={() => {
-                        setIsSignedOff(true)
-                        setSignOffTimestamp(new Date().toLocaleString())
-                        alert(`✅ Decision Authorized by Yale Fellowship Committee Chair.\nApplicant: ${selectedProposal?.applicant_name || selectedProposal?.id}\nDecision: ${overrideDecision}\nScore: ${overrideScore}/5.0`)
-                      }}
-                    >
-                      <span className="material-symbols-outlined">verified</span>
-                      Affix Digital Signature & Seal
-                    </button>
-
-                    {isSignedOff && (
-                      <div style={{ background: '#d1fae5', color: '#065f46', padding: 10, borderRadius: 10, fontSize: '0.78rem', textAlign: 'center' }}>
-                        Certified Digital Signature: YALE-SFS-CHAIR-2026-VAL • {signOffTimestamp}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              <ArbitrationTab
+                totalCandidates={proposals.length}
+                needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
+                proposals={proposals}
+                sortedCohort={sortedCohort}
+                selectedProposal={selectedProposal}
+                isSignedOff={isSignedOff}
+                signOffTimestamp={signOffTimestamp}
+                overrideScore={overrideScore}
+                setOverrideScore={setOverrideScore}
+                overrideDecision={overrideDecision}
+                setOverrideDecision={setOverrideDecision}
+                overrideNotes={overrideNotes}
+                setOverrideNotes={setOverrideNotes}
+                onSignOff={() => {
+                  setIsSignedOff(true)
+                  setSignOffTimestamp(new Date().toLocaleString())
+                  alert(`✅ Decision Authorized by Yale Fellowship Committee Chair.\nApplicant: ${selectedProposal?.applicant_name || selectedProposal?.id}\nDecision: ${overrideDecision}\nScore: ${overrideScore}/5.0`)
+                }}
+                onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
+                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+                onRunBatch={runBatchDemoAudit}
+              />
+            )}
 
             {/* TAB: YALE CORPUS & GUIDELINES */}
             {adminTab === 'corpus' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <HeroCard
-                  total={proposals.length}
-                  needsReview={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                  title="Yale Regulatory Knowledge Base & Certified PDFs"
-                  subtitle="Scraped from official Yale Student Financial Services (finaid.yale.edu) & Fellowship Office (funding.yale.edu)."
-                  searchPlaceholder="Search rules, GPA criteria, video requirements..."
-                  onSearch={(q) => setRagQuery(q)}
-                  onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                  actions={[
-                    { label: 'Run RAG query', icon: 'search', onClick: () => void runRagSearch() },
-                    { label: 'All candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Decision register', icon: 'gavel', onClick: () => setAdminTab('decisions') },
-                    { label: 'Overview', icon: 'space_dashboard', onClick: () => setAdminTab('overview') },
-                  ]}
-                />
-                <div className="m3-card">
-                <div className="m3-card-title-row">
-                  <div>
-                    <h2>Yale Regulatory Knowledge Base & Certified PDFs</h2>
-                    <span className="m3-subtitle">
-                      Scraped from official Yale Student Financial Services (finaid.yale.edu) & Fellowship Office (funding.yale.edu)
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <button
-                      className={`m3-btn ${!pdfViewMode ? 'm3-btn-primary' : 'm3-btn-outlined'}`}
-                      onClick={() => setPdfViewMode(false)}
-                      style={{ background: !pdfViewMode ? '#00356b' : 'transparent', color: !pdfViewMode ? 'white' : '#00356b' }}
-                    >
-                      <span className="material-symbols-outlined">article</span>
-                      Indexed Text
-                    </button>
-                    <button
-                      className={`m3-btn ${pdfViewMode ? 'm3-btn-primary' : 'm3-btn-outlined'}`}
-                      onClick={() => setPdfViewMode(true)}
-                      style={{ background: pdfViewMode ? '#00356b' : 'transparent', color: pdfViewMode ? 'white' : '#00356b' }}
-                    >
-                      <span className="material-symbols-outlined">picture_as_pdf</span>
-                      Official PDF View
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rag-search-panel"><div><span className="eyebrow">RAG retrieval test</span><strong>Query the rules corpus</strong><small>Retrieve source-backed chunks before reviewing a candidate.</small></div><input value={ragQuery} onChange={e => setRagQuery(e.target.value)} placeholder="e.g. GPA eligibility, funding evidence, video requirements" onKeyDown={e => { if (e.key === 'Enter') runRagSearch() }} /><button className="m3-btn m3-btn-primary" onClick={runRagSearch} disabled={ragLoading}>{ragLoading ? 'Retrieving…' : 'Retrieve rules'}</button></div>{ragResults.length > 0 && <div className="rag-results"><div className="artifact-label">Retrieved evidence · {ragResults.length} matches</div>{ragResults.map((result: any) => <article className="rag-result" key={result.document}><div><strong>{result.document}</strong><span className="rag-score">Score {result.score}</span></div><p>{result.snippet}</p></article>)}</div>}
-                <div className="m3-corpus-grid">
-                  <div className="m3-corpus-sidebar">
-                    {corpusDocs.map((doc) => (
-                      <button
-                        key={doc.id}
-                        className={`m3-corpus-doc-btn ${selectedCorpusDoc?.id === doc.id ? 'active' : ''}`}
-                        onClick={() => setSelectedCorpusDoc(doc)}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#dc2626' }}>picture_as_pdf</span>
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.title}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <div>
-                        <strong style={{ fontSize: '1rem' }}>{selectedCorpusDoc?.title}</strong>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                          Source: {selectedCorpusDoc?.pdf_filename || selectedCorpusDoc?.filename}
-                        </div>
-                      </div>
-
-                      {selectedCorpusDoc?.pdf_url && (
-                        <a
-                          href={artifactUrl(selectedCorpusDoc.pdf_url)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="m3-btn m3-btn-outlined"
-                          style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
-                          Open PDF in New Window
-                        </a>
-                      )}
-                    </div>
-
-                    {pdfViewMode && selectedCorpusDoc?.pdf_url ? (
-                      <iframe
-                        src={artifactUrl(selectedCorpusDoc.pdf_url)}
-                        title={selectedCorpusDoc.title}
-                        style={{ width: '100%', height: 440, border: '1px solid #cbd5e1', borderRadius: 12 }}
-                      />
-                    ) : (
-                      <div className="m3-corpus-viewer">
-                        {selectedCorpusDoc ? selectedCorpusDoc.content : 'Select a document...'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              <CorpusTab
+                totalCandidates={proposals.length}
+                needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
+                corpusDocs={corpusDocs}
+                selectedCorpusDoc={selectedCorpusDoc}
+                setSelectedCorpusDoc={setSelectedCorpusDoc}
+                ragQuery={ragQuery}
+                setRagQuery={setRagQuery}
+                ragResults={ragResults}
+                ragLoading={ragLoading}
+                pdfViewMode={pdfViewMode}
+                setPdfViewMode={setPdfViewMode}
+                runRagSearch={() => void runRagSearch()}
+                onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
+                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+                artifactUrl={artifactUrl}
+              />
+            )}
 
             {/* TAB: N8N LOW-CODE ORCHESTRATOR BRIDGE */}
             {adminTab === 'n8n' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <HeroCard
-                  total={proposals.length}
-                  needsReview={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
-                  title="n8n Low-Code Multi-Agent Orchestrator Bridge"
-                  subtitle="Triggers the live n8n workflow webhook (Stage 0 Intake → Stage 2 Deterministic → Stage 3 Parallel Agents → Stage 5 Chair)."
-                  onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
-                  actions={[
-                    { label: 'Open n8n UI', icon: 'open_in_new', onClick: () => window.open('http://localhost:5678', '_blank') },
-                    { label: 'Overview', icon: 'space_dashboard', onClick: () => setAdminTab('overview') },
-                    { label: 'Candidates', icon: 'groups', onClick: () => { setAdminTab('audit'); setCandidateView('all') } },
-                    { label: 'Decisions', icon: 'gavel', onClick: () => setAdminTab('decisions') },
-                  ]}
-                />
-                <div className="m3-card">
-                <div className="m3-card-title-row">
-                  <div>
-                    <h2>n8n Low-Code Multi-Agent Orchestrator Bridge</h2>
-                    <span className="m3-subtitle">
-                      Triggers the live n8n workflow webhook (Stage 0 Intake → Stage 2 Deterministic → Stage 3 Parallel Agents → Stage 5 Chair)
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <button
-                      className="m3-btn m3-btn-outlined"
-                      onClick={() => window.open('http://localhost:5678', '_blank')}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
-                      Open n8n Web UI
-                    </button>
-                  </div>
-                </div>
-
-                {/* Workflow Architecture Overview */}
-                <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: 24 }}>account_tree</span>
-                      <strong style={{ fontSize: '0.95rem' }}>Active Workflow: workflows/grant_panel_simulator_n8n.json</strong>
-                    </div>
-                    <span className="m3-badge m3-badge-neutral" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 700 }}>
-                      Port: 5678 • Webhook Mode
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                    When triggered, n8n receives the proposal JSON via Webhook, executes deterministic code gating in pure Python/Node, fans out 3 parallel evaluation agents (Technical, Impact, Budget), detects score divergence (&ge; 2.0), and arbitrates through the Chair node.
-                  </p>
-                </div>
-
-                {/* Interactive Trigger Controls */}
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: 14, padding: 18, background: '#ffffff', marginBottom: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                    <div>
-                      <strong style={{ fontSize: '0.95rem' }}>Target Candidate Dossier: {selectedProposal?.applicant_name || selectedProposal?.id || 'None selected'}</strong>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                        ID: {selectedProposal?.id || '—'} • Major: {selectedProposal?.major || '—'} • GPA: {selectedProposal?.gpa?.toFixed(2) || '—'}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button
-                        className="m3-btn m3-btn-outlined"
-                        onClick={() => triggerN8nWorkflow('test')}
-                        disabled={n8nTriggerLoading}
-                        style={{ fontSize: '0.8rem' }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>science</span>
-                        {n8nTriggerLoading ? 'Triggering...' : 'Test Event Webhook'}
-                      </button>
-                      <button
-                        className="m3-btn m3-btn-primary"
-                        onClick={() => triggerN8nWorkflow('live')}
-                        disabled={n8nTriggerLoading}
-                        style={{ background: '#00356b', fontSize: '0.8rem' }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
-                        {n8nTriggerLoading ? 'Executing via n8n...' : 'Trigger Production Webhook'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Execution Response Banner */}
-                  {n8nTriggerResult && (
-                    <div style={{
-                      background: n8nTriggerResult.success ? '#ecfdf5' : '#fffbeb',
-                      border: `1px solid ${n8nTriggerResult.success ? '#a7f3d0' : '#fde68a'}`,
-                      borderRadius: 10,
-                      padding: 14,
-                      marginTop: 12
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span className="material-symbols-outlined" style={{ color: n8nTriggerResult.success ? '#059669' : '#d97706', fontSize: 20 }}>
-                          {n8nTriggerResult.success ? 'check_circle' : 'info'}
-                        </span>
-                        <strong style={{ color: n8nTriggerResult.success ? '#065f46' : '#92400e', fontSize: '0.88rem' }}>
-                          {n8nTriggerResult.success ? `Successfully Dispatched to n8n Webhook (${n8nTriggerResult.target_url})` : 'n8n Bridge Status'}
-                        </strong>
-                      </div>
-                      {n8nTriggerResult.error && (
-                        <div style={{ color: '#b45309', fontSize: '0.8rem', marginBottom: 4 }}>
-                          {n8nTriggerResult.error}
-                        </div>
-                      )}
-                      {n8nTriggerResult.hint && (
-                        <div style={{ color: '#78350f', fontSize: '0.76rem', fontStyle: 'italic' }}>
-                          💡 Tip: {n8nTriggerResult.hint}
-                        </div>
-                      )}
-                      {n8nTriggerResult.result && (
-                        <details style={{ marginTop: 8 }}>
-                          <summary style={{ fontSize: '0.78rem', color: '#065f46', cursor: 'pointer', fontWeight: 700 }}>View n8n Pipeline Output Payload</summary>
-                          <pre style={{ background: '#ffffff', padding: 10, borderRadius: 8, marginTop: 6, fontSize: '0.72rem', overflowX: 'auto', border: '1px solid #cbd5e1' }}>
-                            {JSON.stringify(n8nTriggerResult.result, null, 2)}
-                          </pre>
-                        </details>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* 5-Stage Orchestration Trace Visualizer */}
-                <h3 style={{ fontSize: '0.9rem', marginBottom: 12, color: '#334155' }}>End-to-End n8n Orchestrated Pipeline Graph</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-                  {[
-                    { step: 'Stage 0', title: 'Webhook Trigger', desc: 'POST /submit-proposal accepts candidate dossier', icon: 'input' },
-                    { step: 'Stage 2', title: 'Deterministic Gate', desc: 'Checks GPA >= 3.0 & $2.5k tech cap', icon: 'verified' },
-                    { step: 'Stage 3', title: '3 Parallel Agents', desc: 'Technical, Impact & Budget evaluators', icon: 'group_work' },
-                    { step: 'Stage 4', title: 'Disagreement Check', desc: 'Detects divergence >= 2.0 pts', icon: 'alt_route' },
-                    { step: 'Stage 5', title: 'Chair ESR', desc: 'Hierarchical arbitration & final letter', icon: 'gavel' },
-                  ].map((node) => (
-                    <div key={node.step} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 12, background: '#ffffff', textAlign: 'center' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#eff6ff', color: '#00356b', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{node.icon}</span>
-                      </div>
-                      <span className="m3-badge m3-badge-neutral" style={{ fontSize: '0.68rem', marginBottom: 4 }}>{node.step}</span>
-                      <div style={{ fontWeight: 700, fontSize: '0.82rem', marginTop: 4 }}>{node.title}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4 }}>{node.desc}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+              <N8nTab
+                totalCandidates={proposals.length}
+                needsReviewCount={proposals.filter(p => statusForCandidate(p) === 'Needs review').length}
+                selectedProposal={selectedProposal}
+                n8nTriggerLoading={n8nTriggerLoading}
+                n8nTriggerResult={n8nTriggerResult}
+                triggerN8nWorkflow={triggerN8nWorkflow}
+                onOpenWorkspace={() => proposals[0] && void openCandidateAudit(proposals[0].id)}
+                onGoTo={(tab) => { setAdminTab(tab); if (tab === 'audit') setCandidateView('all'); }}
+              />
+            )}
             </div>
         )}
 

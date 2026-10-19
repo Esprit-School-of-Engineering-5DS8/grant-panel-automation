@@ -1,0 +1,403 @@
+{
+  "id": "YALE-NEW-7482",
+  "title": "Real Student Submission",
+  "applicant_name": "Sarah Connor",
+  "pi_name": "Sarah Connor",
+  "school": "Yale College",
+  "major": "Applied Physics",
+  "gpa": 3.9,
+  "page_count": 8,
+  "requested_grant": 18000.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 0.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0,
+    "computer_allowance": 0,
+    "demonstrated_need": 18000
+  },
+  "budget": {
+    "direct_personnel": 12600.0,
+    "direct_equipment": 2700.0,
+    "direct_travel": 1800.0,
+    "direct_other": 900.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 18000.0
+  },
+  "sections": {
+    "abstract": "Physics research proposal",
+    "scientific_methodology": "Experimental physics curriculum",
+    "impact_and_dissemination": "Public science outreach",
+    "work_packages": "Term 1: Setup",
+    "budget": "Need based request: ,000"
+  },
+  "video_transcript": "",
+  "submitted_at": "2026-10-18T18:18:02.068108+00:00",
+  "updated_at": "2026-10-19T01:12:48.105655+00:00",
+  "video_url": null,
+  "cv_filename": null,
+  "education_entries": [],
+  "academic_experiences": [],
+  "leadership_experiences": [],
+  "email": null,
+  "citizenship": null,
+  "phone": null,
+  "birth_date": null,
+  "sex": null,
+  "degree_track": null,
+  "graduation_year": null,
+  "cv_latex": "",
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.68
+  },
+  "audit": {
+    "timeline": [
+      {
+        "stage": "audit_rerun",
+        "status": "queued",
+        "timestamp": "2026-10-19T00:17:15.903504+00:00"
+      },
+      {
+        "stage": "cv_ocr",
+        "status": "skipped",
+        "timestamp": "2026-10-19T00:17:15.941823+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "video_transcription",
+        "status": "skipped",
+        "timestamp": "2026-10-19T00:17:15.951500+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "video_llm_review",
+        "status": "skipped",
+        "timestamp": "2026-10-19T00:17:15.961109+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "evidence_comparison",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T00:17:15.969729+00:00"
+      },
+      {
+        "stage": "evidence_comparison",
+        "status": "complete",
+        "timestamp": "2026-10-19T00:17:17.336219+00:00"
+      },
+      {
+        "stage": "rag_fact_check",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T00:17:17.345933+00:00"
+      },
+      {
+        "stage": "rag_fact_check",
+        "status": "failed",
+        "timestamp": "2026-10-19T00:17:19.069656+00:00",
+        "error": "Groq chat completion failed (HTTP 400) for model 'openai/gpt-oss-120b': Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."
+      },
+      {
+        "stage": "review_technical",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T00:17:19.076301+00:00"
+      },
+      {
+        "stage": "review_technical",
+        "status": "complete",
+        "timestamp": "2026-10-19T00:17:20.364518+00:00"
+      },
+      {
+        "stage": "review_impact",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T00:17:20.369725+00:00"
+      },
+      {
+        "stage": "review_impact",
+        "status": "complete",
+        "timestamp": "2026-10-19T00:17:21.490939+00:00"
+      },
+      {
+        "stage": "review_budget",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T00:17:21.495847+00:00"
+      },
+      {
+        "stage": "review_budget",
+        "status": "complete",
+        "timestamp": "2026-10-19T00:17:23.038897+00:00"
+      },
+      {
+        "stage": "audit_rerun",
+        "status": "queued",
+        "timestamp": "2026-10-19T01:12:41.454909+00:00"
+      },
+      {
+        "stage": "cv_ocr",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.469191+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "video_transcription",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.473831+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "video_llm_review",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.478695+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      {
+        "stage": "evidence_comparison",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T01:12:41.484290+00:00"
+      },
+      {
+        "stage": "evidence_comparison",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:42.813986+00:00"
+      },
+      {
+        "stage": "rag_fact_check",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T01:12:42.819457+00:00"
+      },
+      {
+        "stage": "rag_fact_check",
+        "status": "failed",
+        "timestamp": "2026-10-19T01:12:44.278241+00:00",
+        "error": "Groq chat completion failed (HTTP 400) for model 'openai/gpt-oss-120b': Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."
+      },
+      {
+        "stage": "review_technical",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T01:12:44.286859+00:00"
+      },
+      {
+        "stage": "review_technical",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:45.620127+00:00"
+      },
+      {
+        "stage": "review_impact",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T01:12:45.626397+00:00"
+      },
+      {
+        "stage": "review_impact",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:46.704934+00:00"
+      },
+      {
+        "stage": "review_budget",
+        "status": "in_progress",
+        "timestamp": "2026-10-19T01:12:46.711112+00:00"
+      },
+      {
+        "stage": "review_budget",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:48.099991+00:00"
+      }
+    ],
+    "status": "completed_with_errors",
+    "stages": {
+      "cv_ocr": {
+        "stage": "cv_ocr",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.469191+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      "video_transcription": {
+        "stage": "video_transcription",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.473831+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      "video_llm_review": {
+        "stage": "video_llm_review",
+        "status": "skipped",
+        "timestamp": "2026-10-19T01:12:41.478695+00:00",
+        "error": "Required evidence was not submitted."
+      },
+      "evidence_comparison": {
+        "stage": "evidence_comparison",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:42.813986+00:00"
+      },
+      "rag_fact_check": {
+        "stage": "rag_fact_check",
+        "status": "failed",
+        "timestamp": "2026-10-19T01:12:44.278241+00:00",
+        "error": "Groq chat completion failed (HTTP 400) for model 'openai/gpt-oss-120b': Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."
+      },
+      "review_technical": {
+        "stage": "review_technical",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:45.620127+00:00"
+      },
+      "review_impact": {
+        "stage": "review_impact",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:46.704934+00:00"
+      },
+      "review_budget": {
+        "stage": "review_budget",
+        "status": "complete",
+        "timestamp": "2026-10-19T01:12:48.099991+00:00"
+      }
+    },
+    "results": {
+      "evidence_comparison": {
+        "candidate_id": "YALE-NEW-7482",
+        "status": "review",
+        "source": "groq-llm-evidence-comparison",
+        "model": "openai/gpt-oss-120b",
+        "checked_at": "2026-10-19T01:12:42.813031+00:00",
+        "checks": [
+          {
+            "fact": "Applicant name",
+            "form": "Sarah Connor",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "The name 'Sarah Connor' is provided in the form, but the CV and video fields are null or empty, preventing cross-verification."
+          },
+          {
+            "fact": "Institution",
+            "form": "Yale College",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "The institution 'Yale College' is listed in the form, but there is no corresponding data in the CV or video to confirm or contradict this."
+          },
+          {
+            "fact": "GPA",
+            "form": 3.9,
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "A GPA of 3.9 is stated in the form, but the CV and video contain no information to verify this claim."
+          },
+          {
+            "fact": "Degree / field",
+            "form": "Applied Physics",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "The field 'Applied Physics' is specified in the form, but the CV and video are empty, offering no evidence to support or refute this."
+          },
+          {
+            "fact": "Email",
+            "form": "Not provided",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "No email address is provided in any of the sources (form, CV, or video)."
+          },
+          {
+            "fact": "Phone",
+            "form": "Not provided",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "No phone number is provided in any of the sources (form, CV, or video)."
+          },
+          {
+            "fact": "Research / experience",
+            "form": "Not provided",
+            "cv": "Not detected",
+            "video": "Not detected",
+            "state": "insufficient_evidence",
+            "explanation": "The form lists an empty array for research/experience, and the CV and video are empty, providing no data to evaluate."
+          }
+        ],
+        "contradictions": 0,
+        "model_opinion": "All checks result in 'insufficient_evidence' because the CV and video fields are null or empty. While the form contains specific details (name, institution, GPA, field), there is no secondary source available to verify, contradict, or partially match these claims.",
+        "final_decision": "human_required",
+        "_token_usage": {
+          "prompt_tokens": 227,
+          "completion_tokens": 483,
+          "total_tokens": 710
+        }
+      },
+      "review_technical": {
+        "evaluator": "technical",
+        "source": "groq-llm",
+        "model": "openai/gpt-oss-120b",
+        "score": 4.0,
+        "recommendation": "RESERVE",
+        "summary": "The applicant’s GPA of 3.9 demonstrates strong academic performance, aligning with the high standards expected for the Academic Excellence dimension. However, the dossier lacks additional supporting evidence such as research experience, publications, or honors, limiting the ability to fully assess scholarly rigor.",
+        "citations": [
+          {
+            "document": "05_evaluation_scoring_anchors.md",
+            "quote": "1. **Academic Excellence & Scholarly Rigor** (Weight: 40%)"
+          }
+        ],
+        "_token_usage": {
+          "prompt_tokens": 482,
+          "completion_tokens": 378,
+          "total_tokens": 860
+        }
+      },
+      "review_impact": {
+        "evaluator": "impact",
+        "source": "groq-llm",
+        "model": "openai/gpt-oss-120b",
+        "score": 1.0,
+        "recommendation": "INSUFFICIENT_EVIDENCE",
+        "summary": "The applicant provides no documented leadership experiences and the impact description is limited to a generic phrase \"Public science outreach\" with no supporting details or evidence. The supplied rule excerpts contain only section headings and do not define the criteria needed to evaluate leadership or community impact. Consequently, there is insufficient evidence to assess the candidate’s qualifications for this criterion.",
+        "citations": [
+          {
+            "document": "03_impact_dissemination_criteria.md",
+            "quote": "# Yale Leadership, Community Impact & Global Engagement"
+          },
+          {
+            "document": "02_technical_excellence_criteria.md",
+            "quote": "# Yale Academic Excellence & Research Fellowship Criteria"
+          }
+        ],
+        "_token_usage": {
+          "prompt_tokens": 390,
+          "completion_tokens": 329,
+          "total_tokens": 719
+        }
+      },
+      "review_budget": {
+        "evaluator": "budget",
+        "source": "groq-llm",
+        "model": "openai/gpt-oss-120b",
+        "score": 1.0,
+        "recommendation": "INSUFFICIENT_EVIDENCE",
+        "summary": "The rubric identifies Financial Need, Budget Realism & Feasibility as a core evaluation dimension, but the candidate record provides no evidence of the applicant's financial need (e.g., income, assets) and only a basic budget breakdown. While the budget appears internally consistent, without supporting documentation of need the reviewer cannot assess realism or necessity of the $18,000 request.",
+        "citations": [
+          {
+            "document": "05_evaluation_scoring_anchors.md",
+            "quote": "## Calibrated Rubric: Academic, Impact, and Need Evaluation\n\nEach scholarship dossier is independently evaluated across three core dimensions on an anchored 0.0 to 5.0 scale (half-point increments):\n1. **Academic Excellence & Scholarly Rigor** (Weight: 40%)\n2. **Leadership, Extracurricular Depth & Community Impact** (Weight: 35%)\n3. **Financial Need, Budget Realism & Feasibility** (Weight: 25%)"
+          },
+          {
+            "document": "02_technical_excellence_criteria.md",
+            "quote": "# Yale Academic Excellence & Research Fellowship Criteria"
+          }
+        ],
+        "_token_usage": {
+          "prompt_tokens": 544,
+          "completion_tokens": 477,
+          "total_tokens": 1021
+        }
+      }
+    },
+    "token_usage": {
+      "prompt_tokens": 1643,
+      "completion_tokens": 1667,
+      "total_tokens": 3310
+    },
+    "cancel_requested": false,
+    "completed_at": "2026-10-19T01:12:48.105631+00:00"
+  }
+}

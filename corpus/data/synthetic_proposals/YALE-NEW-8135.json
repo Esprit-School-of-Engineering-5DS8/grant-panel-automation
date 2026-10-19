@@ -1,0 +1,47 @@
+{
+  "id": "YALE-NEW-8135",
+  "title": "Open Doors Application",
+  "applicant_name": "Alex Test",
+  "pi_name": "Alex Test",
+  "school": "Yale College",
+  "major": "Computer Science",
+  "gpa": 3.85,
+  "page_count": 8,
+  "requested_grant": 25000.0,
+  "financials": {},
+  "budget": {
+    "direct_personnel": 17500.0,
+    "direct_equipment": 3750.0,
+    "direct_travel": 2500.0,
+    "direct_other": 1250.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 25000.0
+  },
+  "sections": {
+    "abstract": "Autonomous systems research",
+    "impact_and_dissemination": "Open source release"
+  },
+  "video_transcript": "",
+  "submitted_at": "2026-10-18T18:28:55.357210+00:00",
+  "updated_at": "2026-10-18T18:28:55.357210+00:00",
+  "video_url": null,
+  "cv_filename": null,
+  "education_entries": [],
+  "academic_experiences": [],
+  "leadership_experiences": [],
+  "email": "alex.test@example.com",
+  "citizenship": null,
+  "phone": null,
+  "birth_date": null,
+  "sex": null,
+  "degree_track": null,
+  "graduation_year": null,
+  "cv_latex": "",
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.62
+  }
+}
