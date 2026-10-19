@@ -1,0 +1,43 @@
+{
+  "id": "YALE-01-EXCELLENT",
+  "title": "Quantum Information & Bio-Ethics Fellowship Dossier",
+  "applicant_name": "Maya Lin-Vance",
+  "pi_name": "Maya Lin-Vance",
+  "school": "Yale College / Trumbull College",
+  "major": "Computer Science & Ethics, Politics and Economics (EPE)",
+  "gpa": 3.96,
+  "page_count": 8,
+  "requested_grant": 78500.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 4800.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 78500.0
+  },
+  "budget": {
+    "direct_personnel": 45000.0,
+    "direct_equipment": 12000.0,
+    "direct_travel": 8000.0,
+    "direct_other": 13500.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 78500.0
+  },
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.8
+  },
+  "sections": {
+    "abstract": "Maya Lin-Vance is a senior at Yale College pursuing a double major in Computer Science and Ethics, Politics and Economics (EPE), graduating summa cum laude with a 3.96 cumulative GPA. Her capstone research develops provably fair algorithmic allocation protocols for humanitarian resources.",
+    "scientific_methodology": "Combines game-theoretic mechanism design with formal Z3 SMT solver guarantees. Evaluated on real-world municipal healthcare datasets showing Pareto-optimal distribution while maintaining strict privacy bounds.",
+    "impact_and_dissemination": "Co-director of the Yale Undergrad Community Robotics outreach program, teaching Python and algorithmic fairness to 120 New Haven high school students. Paper accepted at ACM FAccT 2026.",
+    "work_packages": "Term 1: Algorithmic fairness formal proof. Term 2: Empirical testing on New Haven civic datasets. Term 3: Open-source toolkit release under MIT license.",
+    "budget": "Full scholarship grant covers remaining tuition ($64,700) and housing/food ($13,800). Parent share ($4,800) and standard student employment self-help ($3,700) are fully accounted for."
+  },
+  "video_transcript": "Hello members of the Yale Fellowship Committee. My name is Maya Lin-Vance. My capstone work bridges formal computational verification with real-world ethical resource allocation. With Yale's support, this fellowship will allow me to complete our algorithmic fairness toolkit and deploy it with community partners in New Haven.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Yale College, New Haven, CT \\\\\nB.S. in Computer Science and Ethics, Politics and Economics (EPE) \\\\\n\\textbf{Cumulative GPA: 3.96 / 4.00} -- Summa Cum Laude, Phi Beta Kappa\n\\section*{Publications}\n\\textbf{Algorithmic Fairness in Multi-Agent Supply Logistics} -- ACM FAccT 2026.\n\\section*{Leadership}\nCo-Director, Yale Undergrad Community Robotics outreach (120 high school students).\n\\section*{Technical Skills}\nPython, LaTeX, Z3 SMT Solver, PyTorch, C++, Git, Mechanism Design.\n\\end{document}"
+}

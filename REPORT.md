@@ -128,14 +128,14 @@ Using SentenceTransformer neural embeddings (`all-MiniLM-L6-v2`):
 
 | Evaluation Metric | Strategy A (Fixed 400/50) | Strategy B (Structural Markdown) | Strategy B + Metadata Filter | Empirical Takeaway |
 |---|---|---|---|---|
-| **Recall@1** | 63.33% | 43.33% | **76.67%** | Metadata filtering prevents cross-criterion noise and focuses Top-1 accuracy. |
-| **Recall@3** | 80.00% | 76.67% | **90.00%** | Structural chunks provide dense, targeted context windows. |
-| **Recall@5** | 86.67% | 83.33% | **93.33%** | Over 93% of regulatory criteria captured in top 5 retrieval slots. |
-| **MRR (Mean Reciprocal Rank)** | 0.7333 | 0.6056 | **0.8124** | Filtered structural retrieval places the exact regulatory clause in Rank 1 or 2. |
-| **Trap Query Refusal Rate** | 60.00% | 40.00% | **80.00%** | Low similarity threshold reliably separates queries without corpus ground truth. |
+| **Recall@1** | 100.00% | 86.67% | — | Regenerated 2026-10-19 with the current corpus and deterministic TF-IDF fallback. The historical metadata-filtered variant was not rerun. |
+| **Recall@3** | 100.00% | 100.00% | — | Current fallback benchmark result; embedding/Qdrant comparison remains separate. |
+| **Recall@5** | 100.00% | 100.00% | — | Current fallback benchmark result; do not compare directly with historical embedding figures. |
+| **MRR (Mean Reciprocal Rank)** | 1.0000 | 0.9333 | — | Current fallback benchmark result. |
+| **Trap Query Refusal Rate** | 100.00% | 100.00% | — | Current fallback benchmark result using the configured refusal threshold. |
 
 ### 4.3 Metadata Ablation Analysis
-Unconstrained retrieval across heterogeneous regulatory guidelines creates cross-contamination: queries from the Budget Evaluator often accidentally match technical milestone texts. Applying the `critere: budget` metadata filter achieves a **+33.34% boost in Recall@1** and raises MRR from 0.6056 to 0.8124, validating the architecture's metadata-partitioned RAG approach.
+The current regeneration produced a strong deterministic TF-IDF baseline, but it did not rerun the historical metadata-filtered SentenceTransformer/Qdrant ablation. Those historical figures must remain labelled as historical until that exact embedding environment is reproduced.
 
 ---
 
@@ -216,7 +216,7 @@ In adherence to scientific integrity principles, the following system limitation
 
 The repository contains both the simulator workflow and the admin-audit workflow, and the FastAPI bridge can dispatch either webhook. The workflows use `host.docker.internal` by default when calling the API from Docker, while Groq remains behind FastAPI's OpenAI-compatible HTTP client; this avoids depending on a native n8n Groq provider node.
 
-The following claims require a live environment check before being presented as demonstrated: an active n8n/Qdrant Docker stack, an activated imported workflow, one complete candidate execution through n8n, and regeneration of the retrieval, multimodal, cohort, and bias benchmarks from the current source. The latest local validation confirms frontend build, backend compilation, and workflow JSON validity, but Docker Desktop was not running, so no live n8n execution was claimed.
+The following claim still requires a live environment check before being presented as demonstrated: Qdrant persistence. The active n8n admin workflow has completed successful live executions 12 and 13, and a fresh clean candidate replay returned HTTP 200 through the production webhook. The RAG fallback, cohort, and bias artifacts were regenerated from the current source on 2026-10-19. The historical SentenceTransformer/Qdrant ablation remains separately unverified.
 
 All requirements stipulated in the Cahier des Charges are packaged and ready for the final defense:
 - **Exported n8n Workflow:** `workflows/grant_panel_simulator_n8n.json` ready for instant import and execution.
@@ -227,4 +227,4 @@ All requirements stipulated in the Cahier des Charges are packaged and ready for
   2. *Defective Proposal Rejection (`YALE-02` & `YALE-05`):* Early-exit deterministic rejection for budget cap and SAP violations.
   3. *Disagreement & Chair Arbitration (`YALE-03`):* Multimodal figure divergence triggering $\Delta = 2.0$ conflict and Stage 5 Chair arbitration.
   4. *Adversarial Injection Defense (`YALE-04`):* Demonstration of system override failure under isolated context guards.
-  5. *Live Multimodal Video Speech Transcription:* Live execution of Groq Whisper ASR on `WIN_20261015_13_04_11_Pro.mp4`.
+  5. *Live Multimodal Video Speech Transcription:* Run only when the Groq account is within its model rate limits; provider-unavailable output is explicitly surfaced and must not be presented as a successful transcription.

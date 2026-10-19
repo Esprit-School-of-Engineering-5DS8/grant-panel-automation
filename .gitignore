@@ -30,3 +30,4 @@ cv-hazem-mrad-toptal.pdf
 
 # Tool and agent cache
 .freebuff/
+.benchdeps/

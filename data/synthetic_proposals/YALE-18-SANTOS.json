@@ -1,0 +1,43 @@
+{
+  "id": "YALE-18-SANTOS",
+  "title": "Yale Fellowship: Music Composition & Sound Architecture Distinction Project",
+  "applicant_name": "Gabriel Santos",
+  "pi_name": "Gabriel Santos",
+  "school": "Yale College",
+  "major": "Music Composition & Sound Architecture",
+  "gpa": 3.55,
+  "page_count": 8,
+  "requested_grant": 69000.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 9750.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 69000.0
+  },
+  "budget": {
+    "direct_personnel": 44850.0,
+    "direct_equipment": 10350.0,
+    "direct_travel": 6900.0,
+    "direct_other": 6900.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 69000.0
+  },
+  "ground_truth": {
+    "quality_tier": "MED",
+    "flaws": [],
+    "expected_decision": "RESERVE",
+    "consensus_score": 3.4
+  },
+  "sections": {
+    "abstract": "Gabriel Santos is a high-achieving student at Yale pursuing advanced research in Music Composition & Sound Architecture. Cumulative GPA: 3.55.",
+    "scientific_methodology": "Rigorous empirical methodology tailored to Music Composition & Sound Architecture, drawing upon Yale libraries, laboratories, and computational clusters.",
+    "impact_and_dissemination": "Substantial leadership and campus engagement benefiting Yale and the broader scientific community in Music Composition & Sound Architecture.",
+    "work_packages": "Preparation, data acquisition, empirical analysis, and capstone presentation.",
+    "budget": "Budget directly calibrated to institutional need-based grant and tuition coverage ($69,000.00)."
+  },
+  "video_transcript": "Hello to the Yale Selection Committee. I am Gabriel Santos, majoring in Music Composition & Sound Architecture. This fellowship represents a pivotal opportunity to expand my scholarship.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Yale College, New Haven, CT \\\\\nB.S. in Music Composition & Sound Architecture \\\\\n\\textbf{Cumulative GPA: 3.55 / 4.00} -- Distinction in Field\n\\section*{Research Projects}\nIndependent capstone investigation in advanced Music Composition & Sound Architecture.\n\\section*{Technical Skills}\nPython, R, LaTeX, Experimental Design, Statistical Analysis.\n\\end{document}"
+}

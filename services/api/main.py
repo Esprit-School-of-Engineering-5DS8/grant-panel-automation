@@ -315,7 +315,7 @@ def _groq_json_completion(
     if not isinstance(result, dict):
         raise ValueError("The AI provider returned a non-object JSON response.")
     usage = response_payload.get("usage") or {}
-    if isinstance(usage, dict):
+    if isinstance(usage, dict) and usage:
         result["_token_usage"] = {
             "prompt_tokens": int(usage.get("prompt_tokens") or 0),
             "completion_tokens": int(usage.get("completion_tokens") or 0),
@@ -1642,11 +1642,7 @@ def record_committee_decision(proposal_id: str, payload: CommitteeDecisionPayloa
     except (OSError, ValueError, json.JSONDecodeError):
         raise HTTPException(status_code=404, detail=f"Application '{proposal_id}' was not found.")
     audit = candidate.get("audit") or {}
-    required_reviews = ["review_technical", "review_impact"]
-    # Budget is reviewed only when the applicant submitted a structured budget.
-    # Requested grant/financial metadata alone is not a budget submission.
-    if isinstance(candidate.get("budget"), dict) and candidate.get("budget"):
-        required_reviews.append("review_budget")
+    required_reviews = ["review_technical", "review_impact", "review_budget"]
     stages = audit.get("stages") or {}
     missing_reviews = [
         name for name in required_reviews
@@ -2025,10 +2021,10 @@ def run_candidate_audit(proposal_id: str) -> None:
         "video_transcript": transcript.get("transcript", "") if transcript else "",
         "verification": comparison_result or {},
     }
-    criteria = ["technical", "impact"]
-    # Do not invent a budget review from requested_grant or derived financials.
-    if isinstance(candidate.get("budget"), dict) and candidate.get("budget"):
-        criteria.append("budget")
+    # Every dossier receives all three isolated specialist reviews. An empty
+    # budget is evidence of missing financial detail, not a reason to skip the
+    # budget evaluator or weaken the chair sign-off gate.
+    criteria = ["technical", "impact", "budget"]
     for criterion in criteria:
         run_stage(
             f"review_{criterion}",

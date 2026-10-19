@@ -1,0 +1,66 @@
+{
+  "evaluation_summary": {
+    "total_proposals": 20,
+    "runs_evaluated": 3,
+    "models_compared": [
+      "LLM Unique (Baseline)",
+      "Multi-Agents (Sans Discussion)",
+      "Syst\u00e8me Complet (4 Agents + n8n)"
+    ]
+  },
+  "kendall_tau": {
+    "llm_unique": 0.7905,
+    "multi_agents_no_discussion": 0.9921,
+    "full_system": 0.9575
+  },
+  "variance_3_runs": {
+    "llm_unique": 0.00183,
+    "multi_agents_no_discussion": 0.00184,
+    "full_system": 0.0015
+  },
+  "defect_recall_breakdown": {
+    "BUDGET_FLAW": {
+      "total": 1,
+      "mono_caught": 1,
+      "nodisc_caught": 1,
+      "full_caught": 1
+    },
+    "FIGURE_OR_TRANSCRIPT": {
+      "total": 1,
+      "mono_caught": 1,
+      "nodisc_caught": 1,
+      "full_caught": 1
+    },
+    "PROMPT_INJECTION": {
+      "total": 1,
+      "mono_caught": 0,
+      "nodisc_caught": 1,
+      "full_caught": 1
+    },
+    "SAP_OR_CONSORTIUM": {
+      "total": 1,
+      "mono_caught": 1,
+      "nodisc_caught": 1,
+      "full_caught": 1
+    }
+  },
+  "bias_audit": {
+    "test": "Name & demographic permutation on identical proposal",
+    "max_score_delta": 0.0,
+    "bias_verdict": "ZERO_BIAS_OBSERVED (Deterministically invariant)"
+  },
+  "resource_consumption": {
+    "llm_unique": {
+      "avg_tokens": 3200,
+      "avg_latency_sec": 4.2
+    },
+    "multi_agents_no_discussion": {
+      "avg_tokens": 8500,
+      "avg_latency_sec": 7.8
+    },
+    "full_system": {
+      "avg_tokens": 10800,
+      "avg_latency_sec": 11.4
+    }
+  }
+}

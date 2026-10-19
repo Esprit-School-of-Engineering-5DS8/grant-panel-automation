@@ -6,7 +6,7 @@ This traceability matrix keeps the course requirements separate from the admissi
 
 | Requirement | Evidence | Status |
 |---|---|---|
-| Triggerable low-code automation | `workflows/grant_panel_simulator_n8n.json`, `workflows/grant_panel_admin_audit_n8n.json`, FastAPI bridge in `services/api/main.py` | Implemented; live run blocked until Docker/n8n is running |
+| Triggerable low-code automation | `workflows/grant_panel_simulator_n8n.json`, `workflows/grant_panel_admin_audit_n8n.json`, FastAPI bridge in `services/api/main.py` | Implemented; live n8n executions 12 and 13 succeeded |
 | Versioned prompt library | `prompts/prompt_library.md` with v1 failures and v2 fixes | Implemented |
 | Own RAG corpus | `corpus/`, `src/rag/chunker.py`, evaluation dataset/results | Implemented |
 | Chunking comparison | Fixed 400/50 vs structural Markdown; Recall@k, MRR, and trap refusal metrics | Implemented |
@@ -23,9 +23,9 @@ This traceability matrix keeps the course requirements separate from the admissi
 - Frontend production build: verified.
 - Backend Python compilation: verified.
 - Workflow JSON parsing: verified.
-- n8n/Qdrant live execution: not verified; Docker Desktop daemon was unavailable during the latest check.
+- n8n live execution: verified by successful executions 12 and 13 in the active admin workflow. Qdrant-specific persistence was not independently revalidated in this pass.
 - Groq execution: provider status is exposed by `/health`; a configured key and account-enabled models are required for live transcription/evaluation.
-- Stored RAG, cohort, and bias results: available as artifacts, but should be regenerated from the current code before the final defense.
+- Stored RAG, cohort, and bias results: regenerated from the current corpus/source. RAG used the deterministic TF-IDF fallback (8 fixed chunks vs 30 structural chunks); cohort/bias used the restored 20-proposal runner and 3-run simulation. SentenceTransformer/Qdrant-specific results remain a separate unverified variant.
 
 ## Runtime honesty & ASR Integration
 

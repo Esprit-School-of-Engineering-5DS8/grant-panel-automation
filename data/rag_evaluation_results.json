@@ -1,0 +1,570 @@
+{
+  "Strategy_A_Fixed_400": {
+    "num_valid_queries": 30,
+    "num_trap_queries": 5,
+    "recall_at_1": 1.0,
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "mrr": 1.0,
+    "trap_refusal_rate": 1.0,
+    "details": [
+      {
+        "id": "q01",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.2301903944613219
+      },
+      {
+        "id": "q02",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.17327200855136055
+      },
+      {
+        "id": "q03",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.09153129560967033
+      },
+      {
+        "id": "q04",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.08753560340638375
+      },
+      {
+        "id": "q05",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.22766899158131423
+      },
+      {
+        "id": "q06",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.17925745626054812
+      },
+      {
+        "id": "q07",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.19862294311543385
+      },
+      {
+        "id": "q08",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.14671234133191913
+      },
+      {
+        "id": "q09",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.18419369191457366
+      },
+      {
+        "id": "q10",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.1673455333991932
+      },
+      {
+        "id": "q11",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.1417692340091226
+      },
+      {
+        "id": "q12",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.15350027415877057
+      },
+      {
+        "id": "q13",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.23616167816477404
+      },
+      {
+        "id": "q14",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.16410657285310132
+      },
+      {
+        "id": "q15",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.3448661702286279
+      },
+      {
+        "id": "q16",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.2396952451620072
+      },
+      {
+        "id": "q17",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.2396952451620072
+      },
+      {
+        "id": "q18",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.118318862604179
+      },
+      {
+        "id": "q19",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.17845892750363815
+      },
+      {
+        "id": "q20",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.16645935108595156
+      },
+      {
+        "id": "q21",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.20462298592464884
+      },
+      {
+        "id": "q22",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.17768841088794207
+      },
+      {
+        "id": "q23",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.33750956267943033
+      },
+      {
+        "id": "q24",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.3362332190118252
+      },
+      {
+        "id": "q25",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.07447870440620666
+      },
+      {
+        "id": "q26",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.14929984278874683
+      },
+      {
+        "id": "q27",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.10380802514573195
+      },
+      {
+        "id": "q28",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.1758862318068092
+      },
+      {
+        "id": "q29",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.15382132914483795
+      },
+      {
+        "id": "q30",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.26429975167739117
+      },
+      {
+        "id": "trap01",
+        "is_trap": true,
+        "top_score": 0.04667554994052122,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap02",
+        "is_trap": true,
+        "top_score": 0.0,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap03",
+        "is_trap": true,
+        "top_score": 0.0652561391383896,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap04",
+        "is_trap": true,
+        "top_score": 0.06412931582595237,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap05",
+        "is_trap": true,
+        "top_score": 0.0,
+        "refused_correctly": true
+      }
+    ]
+  },
+  "Strategy_B_Structural": {
+    "num_valid_queries": 30,
+    "num_trap_queries": 5,
+    "recall_at_1": 0.8667,
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "mrr": 0.9333,
+    "trap_refusal_rate": 1.0,
+    "details": [
+      {
+        "id": "q01",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.23597766298010248
+      },
+      {
+        "id": "q02",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 2,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.27519176993995415
+      },
+      {
+        "id": "q03",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.1019504165165773
+      },
+      {
+        "id": "q04",
+        "is_trap": false,
+        "target_doc": "01_call_overview.md",
+        "found_rank": 1,
+        "top_doc": "01_call_overview.md",
+        "top_score": 0.09798805800680457
+      },
+      {
+        "id": "q05",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.2675127273119353
+      },
+      {
+        "id": "q06",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.1962631550045551
+      },
+      {
+        "id": "q07",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.28113780990521314
+      },
+      {
+        "id": "q08",
+        "is_trap": false,
+        "target_doc": "02_technical_excellence_criteria.md",
+        "found_rank": 1,
+        "top_doc": "02_technical_excellence_criteria.md",
+        "top_score": 0.15907258189461845
+      },
+      {
+        "id": "q09",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.18833253454021376
+      },
+      {
+        "id": "q10",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.20205616446712904
+      },
+      {
+        "id": "q11",
+        "is_trap": false,
+        "target_doc": "03_impact_dissemination_criteria.md",
+        "found_rank": 1,
+        "top_doc": "03_impact_dissemination_criteria.md",
+        "top_score": 0.27186389238509595
+      },
+      {
+        "id": "q12",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.20016593682499628
+      },
+      {
+        "id": "q13",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.3824998347493499
+      },
+      {
+        "id": "q14",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.22928565683558594
+      },
+      {
+        "id": "q15",
+        "is_trap": false,
+        "target_doc": "04_budget_eligibility_rules.md",
+        "found_rank": 1,
+        "top_doc": "04_budget_eligibility_rules.md",
+        "top_score": 0.41334438761218295
+      },
+      {
+        "id": "q16",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 2,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.22534962551664034
+      },
+      {
+        "id": "q17",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 2,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.22534962551664034
+      },
+      {
+        "id": "q18",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.15394289469302608
+      },
+      {
+        "id": "q19",
+        "is_trap": false,
+        "target_doc": "05_evaluation_scoring_anchors.md",
+        "found_rank": 1,
+        "top_doc": "05_evaluation_scoring_anchors.md",
+        "top_score": 0.36616754472597807
+      },
+      {
+        "id": "q20",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.21924046822492418
+      },
+      {
+        "id": "q21",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.24233396638845156
+      },
+      {
+        "id": "q22",
+        "is_trap": false,
+        "target_doc": "06_ethics_and_security_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "06_ethics_and_security_guidelines.md",
+        "top_score": 0.2407969625875015
+      },
+      {
+        "id": "q23",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.3404264265186757
+      },
+      {
+        "id": "q24",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 2,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.2930790767095366
+      },
+      {
+        "id": "q25",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.17447881251169972
+      },
+      {
+        "id": "q26",
+        "is_trap": false,
+        "target_doc": "07_panel_chair_guidelines.md",
+        "found_rank": 1,
+        "top_doc": "07_panel_chair_guidelines.md",
+        "top_score": 0.23295563420831975
+      },
+      {
+        "id": "q27",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.14182026654017718
+      },
+      {
+        "id": "q28",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.23970762777986965
+      },
+      {
+        "id": "q29",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.26307323746934597
+      },
+      {
+        "id": "q30",
+        "is_trap": false,
+        "target_doc": "08_data_management_and_open_science.md",
+        "found_rank": 1,
+        "top_doc": "08_data_management_and_open_science.md",
+        "top_score": 0.2645404631617631
+      },
+      {
+        "id": "trap01",
+        "is_trap": true,
+        "top_score": 0.0884960145459356,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap02",
+        "is_trap": true,
+        "top_score": 0.0,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap03",
+        "is_trap": true,
+        "top_score": 0.08735980048139085,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap04",
+        "is_trap": true,
+        "top_score": 0.13804753403958125,
+        "refused_correctly": true
+      },
+      {
+        "id": "trap05",
+        "is_trap": true,
+        "top_score": 0.0,
+        "refused_correctly": true
+      }
+    ]
+  },
+  "Comparison": {
+    "Recall@1_delta": -0.1333,
+    "Recall@3_delta": 0.0,
+    "MRR_delta": -0.0667,
+    "Refusal_delta": 0.0
+  }
+}

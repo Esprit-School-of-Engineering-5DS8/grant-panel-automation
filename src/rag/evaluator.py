@@ -12,6 +12,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 try:
+    if os.getenv("DISABLE_SENTENCE_TRANSFORMERS") == "1":
+        raise ImportError("disabled for deterministic offline benchmark")
     from sentence_transformers import SentenceTransformer
     HAS_ST = True
 except ImportError:

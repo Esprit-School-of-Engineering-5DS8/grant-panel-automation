@@ -1,0 +1,43 @@
+{
+  "id": "YALE-17-ZHANG",
+  "title": "Yale Fellowship: Molecular Biophysics & Biochemistry Distinction Project",
+  "applicant_name": "Chloe Zhang",
+  "pi_name": "Chloe Zhang",
+  "school": "Yale College",
+  "major": "Molecular Biophysics & Biochemistry",
+  "gpa": 3.93,
+  "page_count": 8,
+  "requested_grant": 85000.0,
+  "financials": {
+    "cost_of_attendance": 87000.0,
+    "parent_share": 4050.0,
+    "student_share": 3700.0,
+    "outside_scholarships": 0.0,
+    "computer_allowance": 0.0,
+    "demonstrated_need": 85000.0
+  },
+  "budget": {
+    "direct_personnel": 55250.0,
+    "direct_equipment": 12750.0,
+    "direct_travel": 8500.0,
+    "direct_other": 8500.0,
+    "subcontracting": 0.0,
+    "indirect_costs": 0.0,
+    "requested_grant": 85000.0
+  },
+  "ground_truth": {
+    "quality_tier": "HIGH",
+    "flaws": [],
+    "expected_decision": "FUND",
+    "consensus_score": 4.7
+  },
+  "sections": {
+    "abstract": "Chloe Zhang is a high-achieving student at Yale pursuing advanced research in Molecular Biophysics & Biochemistry. Cumulative GPA: 3.93.",
+    "scientific_methodology": "Rigorous empirical methodology tailored to Molecular Biophysics & Biochemistry, drawing upon Yale libraries, laboratories, and computational clusters.",
+    "impact_and_dissemination": "Substantial leadership and campus engagement benefiting Yale and the broader scientific community in Molecular Biophysics & Biochemistry.",
+    "work_packages": "Preparation, data acquisition, empirical analysis, and capstone presentation.",
+    "budget": "Budget directly calibrated to institutional need-based grant and tuition coverage ($85,000.00)."
+  },
+  "video_transcript": "Hello to the Yale Selection Committee. I am Chloe Zhang, majoring in Molecular Biophysics & Biochemistry. This fellowship represents a pivotal opportunity to expand my scholarship.",
+  "cv_latex": "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n\\section*{Education}\n\\textbf{Yale University} -- Yale College, New Haven, CT \\\\\nB.S. in Molecular Biophysics & Biochemistry \\\\\n\\textbf{Cumulative GPA: 3.93 / 4.00} -- Distinction in Field\n\\section*{Research Projects}\nIndependent capstone investigation in advanced Molecular Biophysics & Biochemistry.\n\\section*{Technical Skills}\nPython, R, LaTeX, Experimental Design, Statistical Analysis.\n\\end{document}"
+}
