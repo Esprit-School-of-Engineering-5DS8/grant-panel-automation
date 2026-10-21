@@ -64,21 +64,19 @@ automates the repetitive parts of the review while keeping the human in charge:
 
 ## Application walkthrough (screenshots)
 
-Screenshots were captured from the current UI on **19 October 2026**. Full-resolution
-originals live in [`report/figures/`](report/figures).
+Screenshots were captured from the current UI on **19 October 2026**. Cropped,
+full-bleed versions live in [`docs/screenshots/`](docs/screenshots); the original
+exports are in [`report/figures/`](report/figures).
 
 ### Applicant experience
 
-<table>
-<tr>
-<td width="50%"><img src="report/figures/01-applicant-portal-new.png" alt="Applicant portal sign-in"></td>
-<td width="50%"><img src="report/figures/02-student-workspace-new.png" alt="Student application workspace"></td>
-</tr>
-<tr>
-<td align="center"><em>(a) Applicant sign-in — secure access to the 2026 application.</em></td>
-<td align="center"><em>(b) Student workspace — six-step dossier with live progress.</em></td>
-</tr>
-</table>
+![Applicant sign-in](docs/screenshots/01-applicant-portal.png)
+
+*Applicant sign-in — secure access to the 2026 application.*
+
+![Student workspace](docs/screenshots/02-student-workspace.png)
+
+*Student workspace — six-step dossier with live progress.*
 
 The applicant portal guides the candidate through **six dossier pieces**
 (General information, Education, Experience, CV deposit, Review, Video motivation),
@@ -86,26 +84,17 @@ saves progress locally, and tracks the current stage before submission.
 
 ### Committee console
 
-<table>
-<tr>
-<td width="100%"><img src="report/figures/04-admin-overview-new.png" alt="Committee overview dashboard"></td>
-</tr>
-<tr>
-<td align="center"><em>(a) Committee overview — cohort KPIs, quick actions and the review queue.</em></td>
-</tr>
-<tr>
-<td width="100%"><img src="report/figures/05-rag-rules-new.png" alt="Regulatory knowledge base and RAG rule retrieval"></td>
-</tr>
-<tr>
-<td align="center"><em>(b) Rules — the Yale regulatory knowledge base with RAG rule retrieval and certified PDF view.</em></td>
-</tr>
-<tr>
-<td width="100%"><img src="report/figures/06-decisions-new.png" alt="Candidate audit register"></td>
-</tr>
-<tr>
-<td align="center"><em>(c) Candidate register — status, decision and evidence-review queue for the whole cohort.</em></td>
-</tr>
-</table>
+![Committee overview dashboard](docs/screenshots/04-admin-overview.png)
+
+*Committee overview — cohort KPIs, quick actions and the review queue.*
+
+![Regulatory knowledge base and RAG rule retrieval](docs/screenshots/05-rules-rag.png)
+
+*Rules — the Yale regulatory knowledge base with RAG rule retrieval and certified PDF view.*
+
+![Candidate audit register](docs/screenshots/06-candidate-register.png)
+
+*Candidate register — status, decision and evidence-review queue for the whole cohort.*
 
 The committee console provides the **overview dashboard**, **batch audit / audit
 workspace**, the **RAG rule explorer**, the **review queue**, and **sign-off** —
