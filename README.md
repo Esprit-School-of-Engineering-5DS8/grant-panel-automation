@@ -64,7 +64,7 @@ automates the repetitive parts of the review while keeping the human in charge:
 
 ## Application walkthrough (screenshots)
 
-Screenshots were captured from the current UI on **19 October 2026**. Cropped,
+Screenshots were captured from the current UI in **October 2026**. Cropped,
 full-bleed versions live in [`docs/screenshots/`](docs/screenshots); the original
 exports are in [`report/figures/`](report/figures).
 

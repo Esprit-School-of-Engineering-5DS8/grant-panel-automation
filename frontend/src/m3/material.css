@@ -464,8 +464,10 @@ input, select, textarea, .m3-select, .field input, .field select, .field textare
 /* 5. Responsive                                                        */
 /* ------------------------------------------------------------------ */
 @media (max-width: 1280px) {
-  .dash-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .dash-grid3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 1180px) {
+  .dash-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {
   .dash-hero-foot { flex-direction: column; align-items: flex-start; }
